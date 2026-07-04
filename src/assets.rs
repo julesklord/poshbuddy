@@ -118,9 +118,9 @@ pub fn get_default_segments() -> Vec<SegmentAsset> {
             category: "Development".to_string(),
         },
         SegmentAsset {
-            name: "Package version".to_string(),
-            segment_type: "package".to_string(),
-            description: "Shows current project package version (npm/Cargo).".to_string(),
+            name: "Project version".to_string(),
+            segment_type: "project".to_string(),
+            description: "Shows current project version (npm/Cargo/etc).".to_string(),
             category: "Development".to_string(),
         },
         SegmentAsset {
@@ -160,9 +160,9 @@ pub fn get_default_segments() -> Vec<SegmentAsset> {
             category: "Cloud".to_string(),
         },
         SegmentAsset {
-            name: "Cloudflare".to_string(),
+            name: "Cloud Foundry".to_string(),
             segment_type: "cf".to_string(),
-            description: "Shows active Cloudflare context.".to_string(),
+            description: "Shows active Cloud Foundry context.".to_string(),
             category: "Cloud".to_string(),
         },
         SegmentAsset {
@@ -345,9 +345,9 @@ mod tests {
                     category: "Development".to_string(),
                 },
                 SegmentAsset {
-                    name: "Package version".to_string(),
-                    segment_type: "package".to_string(),
-                    description: "Shows current project package version (npm/Cargo).".to_string(),
+                    name: "Project version".to_string(),
+                    segment_type: "project".to_string(),
+                    description: "Shows current project version (npm/Cargo/etc).".to_string(),
                     category: "Development".to_string(),
                 },
                 SegmentAsset {
@@ -387,9 +387,9 @@ mod tests {
                     category: "Cloud".to_string(),
                 },
                 SegmentAsset {
-                    name: "Cloudflare".to_string(),
+                    name: "Cloud Foundry".to_string(),
                     segment_type: "cf".to_string(),
-                    description: "Shows active Cloudflare context.".to_string(),
+                    description: "Shows active Cloud Foundry context.".to_string(),
                     category: "Cloud".to_string(),
                 },
                 SegmentAsset {
