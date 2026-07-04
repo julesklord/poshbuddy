@@ -3,8 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>poshbuddy ~ unixporn/ricing</title>
-    <meta name="description" content="poshbuddy: a terminal management engine for OMP. btw i use arch.">
+    <title>PoshBuddy — Surgical Theme Management for Oh My Posh</title>
+    <meta name="description" content="PoshBuddy v0.6.1 — A professional TUI & CLI tool written in Rust to manage Oh My Posh themes, install Nerd Fonts, and configure shell profiles across PowerShell, Bash, Zsh, and Fish. Features surgical JSON editing, async theme discovery, and safe profile injection.">
+    <meta name="keywords" content="oh-my-posh, theme manager, terminal, rust, tui, cli, nerd-fonts, powershell, ricing, dotfiles">
+    <meta property="og:title" content="PoshBuddy — Surgical Theme Management for Oh My Posh">
+    <meta property="og:description" content="Professional TUI & CLI tool in Rust for managing Oh My Posh configurations. 240+ themes, Nerd Fonts, multi-shell support.">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://julesklord.github.io/poshbuddy/">
+    <meta property="og:image" content="https://julesklord.github.io/poshbuddy/logo.png">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="PoshBuddy — Surgical Theme Management for Oh My Posh">
+    <meta name="twitter:description" content="Professional TUI & CLI tool in Rust for managing Oh My Posh configurations.">
+    <link rel="canonical" href="https://julesklord.github.io/poshbuddy/">
+    <link rel="manifest" href="/poshbuddy/manifest.json">
+    <meta name="theme-color" content="#1e1e2e">
+    <link rel="icon" type="image/png" href="./logo.png">
+    <link rel="apple-touch-icon" href="./logo.png">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     
     <!-- Link to our CSS system -->
     <link rel="stylesheet" href="./index.css">
@@ -21,6 +37,57 @@
     <div class="desktop-bg-grid"></div>
     <div class="desktop-bg-mesh" id="bg-mesh"></div>
 
+    <!-- Keyboard Shortcuts Overlay -->
+    <div class="shortcuts-overlay" id="shortcuts-overlay" role="dialog" aria-modal="true" aria-labelledby="shortcuts-title">
+        <div class="shortcuts-modal">
+            <div class="shortcuts-header">
+                <span class="shortcuts-title" id="shortcuts-title">Keyboard Shortcuts</span>
+                <button class="shortcuts-close" onclick="toggleShortcuts()" aria-label="Close shortcuts">&times;</button>
+            </div>
+            <div class="shortcuts-content">
+                <div class="shortcuts-category">
+                    <div class="shortcuts-category-title">Workspaces</div>
+                    <div class="shortcuts-grid">
+                        <div class="shortcut-item"><div class="shortcut-keys"><span class="shortcut-key mod">Alt</span><span class="shortcut-key">1</span></div><span class="shortcut-desc">Dashboard</span></div>
+                        <div class="shortcut-item"><div class="shortcut-keys"><span class="shortcut-key mod">Alt</span><span class="shortcut-key">2</span></div><span class="shortcut-desc">Terminal & Player</span></div>
+                        <div class="shortcut-item"><div class="shortcut-keys"><span class="shortcut-key mod">Alt</span><span class="shortcut-key">3</span></div><span class="shortcut-desc">Code & Architecture</span></div>
+                        <div class="shortcut-item"><div class="shortcut-keys"><span class="shortcut-key mod">Alt</span><span class="shortcut-key">4</span></div><span class="shortcut-desc">Manual & Reference</span></div>
+                        <div class="shortcut-item"><div class="shortcut-keys"><span class="shortcut-key mod">Alt</span><span class="shortcut-key">5</span></div><span class="shortcut-desc">Changelog</span></div>
+                    </div>
+                </div>
+                <div class="shortcuts-category">
+                    <div class="shortcuts-category-title">Window Management</div>
+                    <div class="shortcuts-grid">
+                        <div class="shortcut-item"><div class="shortcut-keys"><span class="shortcut-key">Click</span></div><span class="shortcut-desc">Focus window</span></div>
+                        <div class="shortcut-item"><div class="shortcut-keys"><span class="shortcut-key">Drag</span></div><span class="shortcut-desc">Move window (floating mode)</span></div>
+                        <div class="shortcut-item"><div class="shortcut-keys"><span class="shortcut-key mod">Ctrl</span><span class="shortcut-key">M</span></div><span class="shortcut-desc">Minimize window</span></div>
+                        <div class="shortcut-item"><div class="shortcut-keys"><span class="shortcut-key mod">Ctrl</span><span class="shortcut-key mod">Shift</span><span class="shortcut-key">M</span></div><span class="shortcut-desc">Maximize / Restore</span></div>
+                        <div class="shortcut-item"><div class="shortcut-keys"><span class="shortcut-key mod">Ctrl</span><span class="shortcut-key">W</span></div><span class="shortcut-desc">Close window</span></div>
+                    </div>
+                </div>
+                <div class="shortcuts-category">
+                    <div class="shortcuts-category-title">Layout & Display</div>
+                    <div class="shortcuts-grid">
+                        <div class="shortcut-item"><div class="shortcut-keys"><span class="shortcut-key">L</span></div><span class="shortcut-desc">Cycle layout (tiled/monocle/floating)</span></div>
+                        <div class="shortcut-item"><div class="shortcut-keys"><span class="shortcut-key">C</span></div><span class="shortcut-desc">Toggle CRT effect</span></div>
+                        <div class="shortcut-item"><div class="shortcut-keys"><span class="shortcut-key">T</span></div><span class="shortcut-desc">Open theme picker</span></div>
+                        <div class="shortcut-item"><div class="shortcut-keys"><span class="shortcut-key">?</span></div><span class="shortcut-desc">Toggle keyboard shortcuts</span></div>
+                    </div>
+                </div>
+                <div class="shortcuts-category">
+                    <div class="shortcuts-category-title">Terminal</div>
+                    <div class="shortcuts-grid">
+                        <div class="shortcut-item"><div class="shortcut-keys"><span class="shortcut-key">Enter</span></div><span class="shortcut-desc">Execute command</span></div>
+                        <div class="shortcut-item"><div class="shortcut-keys"><span class="shortcut-key">Chip</span></div><span class="shortcut-desc">Run preset command</span></div>
+                    </div>
+                </div>
+            </div>
+            <div class="shortcuts-footer" style="padding: 12px 20px; border-top: 1px solid var(--border); display: flex; justify-content: center; gap: 8px; flex-wrap: wrap;">
+                <span style="font-size: 12px; color: var(--text-muted); font-family: var(--font-display);">Press <kbd style="background: var(--primary); color: var(--black); padding: 1px 6px; border-radius: 3px; font-weight: 700;">?</kbd> or <kbd style="background: var(--primary); color: var(--black); padding: 1px 6px; border-radius: 3px; font-weight: 700;">Shift+/</kbd> to toggle</span>
+            </div>
+        </div>
+    </div>
+
     <!-- ==========================================
        1. POLYBAR / WAYBAR SIMULATOR (STATUS BAR)
        ========================================== -->
@@ -32,6 +99,7 @@
                 <button class="workspace-btn" data-ws="2" onclick="switchWorkspace(2)" title="Term & Player (Alt+2)">2:term</button>
                 <button class="workspace-btn" data-ws="3" onclick="switchWorkspace(3)" title="Dev Core (Alt+3)">3:code</button>
                 <button class="workspace-btn" data-ws="4" onclick="switchWorkspace(4)" title="poshbuddy(1) Man (Alt+4)">4:man</button>
+                <button class="workspace-btn" data-ws="5" onclick="switchWorkspace(5)" title="Changelog (Alt+5)">5:log</button>
             </div>
             
             <!-- Layout Switcher -->
@@ -66,6 +134,10 @@
                     <button class="theme-opt" onclick="setTheme('dracula', 'dracula')">dracula</button>
                     <button class="theme-opt" onclick="setTheme('gruvbox', 'gruvbox')">gruvbox</button>
                     <button class="theme-opt" onclick="setTheme('nord', 'nord')">nord</button>
+                    <button class="theme-opt" onclick="setTheme('rosepine', 'rose pine')">rose pine</button>
+                    <button class="theme-opt" onclick="setTheme('kanagawa', 'kanagawa')">kanagawa</button>
+                    <button class="theme-opt" onclick="setTheme('everforest', 'everforest')">everforest</button>
+                    <button class="theme-opt" onclick="setTheme('latte', 'latte')">latte</button>
                 </div>
             </div>
             
@@ -96,7 +168,7 @@
                                 <button class="window-control-btn ctrl-close" onclick="closeWindow('win-hero', 1)" title="Close"></button>
                             </div>
                         </div>
-                        <div class="window-body">
+<div class="window-body">
                             <div class="neofetch-ascii">
   _____           _     ____            _     _       
  |  __ \         | |   |  _ \          | |   | |      
@@ -104,9 +176,10 @@
  |  ___/ _ \/ __|| '_ \|  _ <| | | |/ _` |/ _` | | | |
  | |  | (_) \__ \| | | | |_) | |_| | (_| | (_| | |_| |
  |_|   \___/|___/|_| |_|____/ \__,_|\__,_|\__,_|\__, |
-                                                 __/ |
-                                                |___/ </div>
+                                                  __/ |
+                                                 |___/ </div>
                             <div class="tagline">surgical management for oh-my-posh configurations</div>
+                            <div class="version-badge">v0.6.1 • rust 2024 edition • mit license</div>
                         </div>
                     </div>
 
@@ -122,14 +195,15 @@
                         </div>
                         <div class="window-body">
                             <div class="neofetch-container">
-                                <div class="neofetch-line"><span class="neofetch-key">Project</span>: <span class="neofetch-val">poshbuddy v0.4.7</span></div>
+                                <div class="neofetch-line"><span class="neofetch-key">Project</span>: <span class="neofetch-val">poshbuddy v0.6.1</span></div>
                                 <div class="neofetch-line"><span class="neofetch-key">Engine</span>: <span class="neofetch-val">Rust (Standard ISO - 2024 Edition)</span></div>
                                 <div class="neofetch-line"><span class="neofetch-key">TUI-Lib</span>: <span class="neofetch-val">Ratatui v0.30</span></div>
-                                <div class="neofetch-line"><span class="neofetch-key">Network</span>: <span class="neofetch-val">Tokio / Reqwest</span></div>
+                                <div class="neofetch-line"><span class="neofetch-key">Async Runtime</span>: <span class="neofetch-val">Tokio (full)</span></div>
+                                <div class="neofetch-line"><span class="neofetch-key">Network</span>: <span class="neofetch-val">Reqwest (JSON, 10s timeout)</span></div>
                                 <div class="neofetch-line"><span class="neofetch-key">Parser</span>: <span class="neofetch-val">Serde-JSON (Surgical Editing)</span></div>
-                                <div class="neofetch-line"><span class="neofetch-key">Host</span>: <span class="neofetch-val">Windows Terminal / PowerShell</span></div>
+                                <div class="neofetch-line"><span class="neofetch-key">Shells</span>: <span class="neofetch-val">PowerShell, Bash, Zsh, Fish</span></div>
                                 <div class="neofetch-line"><span class="neofetch-key">License</span>: <span class="neofetch-val">MIT</span></div>
-                                <div class="neofetch-line"><span class="neofetch-key">System</span>: <span class="neofetch-val">btw i use arch / linux</span></div>
+                                <div class="neofetch-line"><span class="neofetch-key">Platforms</span>: <span class="neofetch-val">Windows, Linux, macOS</span></div>
                                 
                                 <div class="neofetch-colors">
                                     <div class="neofetch-color-block" style="background-color: var(--red);"></div>
@@ -149,7 +223,7 @@
                     <!-- Features Block -->
                     <div class="window win-features enter-animation" id="win-features" onclick="focusWindow('win-features')" style="animation-delay: 0.25s;">
                         <div class="window-header">
-                            <div class="window-title">architecture.txt</div>
+                            <div class="window-title">features.txt</div>
                             <div class="window-controls">
                                 <button class="window-control-btn ctrl-min" onclick="minimizeWindow('win-features', 1)" title="Minimize"></button>
                                 <button class="window-control-btn ctrl-max" onclick="maximizeWindow('win-features')" title="Maximize"></button>
@@ -164,15 +238,35 @@
                                 </li>
                                 <li class="feature-item">
                                     <div class="feature-title">async theme discovery</div>
-                                    <div class="feature-desc">Built with Tokio for fast, non-blocking network requests. Access, download, and configure over 240+ themes with complete security.</div>
+                                    <div class="feature-desc">Built with Tokio for fast, non-blocking network requests. Access, download, and configure 240+ themes from the official catalog with complete security.</div>
                                 </li>
                                 <li class="feature-item">
                                     <div class="feature-title">safe profile injection</div>
-                                    <div class="feature-desc">Uses a non-destructive, marker-based injection algorithm wrapped in comment blocks to alter your PowerShell profiles. Reversible, secure, and auditable.</div>
+                                    <div class="feature-desc">Uses a non-destructive, marker-based injection algorithm wrapped in comment blocks to alter shell profiles. Reversible, secure, and auditable.</div>
                                 </li>
                                 <li class="feature-item">
                                     <div class="feature-title">responsive tui engine</div>
                                     <div class="feature-desc">A professional TUI layout built on Ratatui that adapts seamlessly to desktop sizes and small panels. Keeps terminal operations responsive.</div>
+                                </li>
+                                <li class="feature-item">
+                                    <div class="feature-title">multi-shell profile sync</div>
+                                    <div class="feature-desc">Detects and updates PowerShell, Bash, Zsh, and Fish profiles automatically. Cross-platform configuration management.</div>
+                                </li>
+                                <li class="feature-item">
+                                    <div class="feature-title">nerd fonts installer</div>
+                                    <div class="feature-desc">Download and install Nerd Fonts (FiraCode, JetBrainsMono, Hack, CascadiaCode, etc.) directly from the TUI or CLI.</div>
+                                </li>
+                                <li class="feature-item">
+                                    <div class="feature-title">system diagnostics</div>
+                                    <div class="feature-desc">Verify theme catalog versions, CLI versions, font integrity, Oh My Posh binary presence, and terminal compatibility.</div>
+                                </li>
+                                <li class="feature-item">
+                                    <div class="feature-title">backup & rollback</div>
+                                    <div class="feature-desc">Automatic timestamped snapshots before every edit. List, preview, and restore previous configurations from the TUI.</div>
+                                </li>
+                                <li class="feature-item">
+                                    <div class="feature-title">headless cli mode</div>
+                                    <div class="feature-desc">Full automation support for CI/CD pipelines. Script theme changes, font installs, and diagnostics without interactive TUI.</div>
                                 </li>
                             </ul>
                         </div>
@@ -189,13 +283,29 @@
                             </div>
                         </div>
                         <div class="window-body">
-                            <div class="install-block-content">
-                                <div class="install-command" id="cmd-string">cargo install --path .</div>
-                                <button class="install-copy-btn" id="copy-btn" onclick="copyInstallCmd()">[copy]</button>
+                            <div class="install-section">
+                                <div class="install-label">crates.io (recommended)</div>
+                                <div class="install-block-content">
+                                    <div class="install-command" id="cmd-crates">cargo install poshbuddy</div>
+                                    <button class="install-copy-btn" onclick="copyCmd('cmd-crates')">[copy]</button>
+                                </div>
                             </div>
-                            <div style="font-size: 11px; margin-top: 8px; color: var(--text-muted); font-family: var(--font-mono);">
-                                Or download binaries directly from GitHub releases for Windows, macOS, or Linux.
+                            <div class="install-section">
+                                <div class="install-label">build from source</div>
+                                <div class="install-block-content">
+                                    <div class="install-command" id="cmd-source">git clone https://github.com/julesklord/poshbuddy && cd poshbuddy && cargo install --path .</div>
+                                    <button class="install-copy-btn" onclick="copyCmd('cmd-source')">[copy]</button>
+                                </div>
                             </div>
+                            <div class="install-section">
+                                <div class="install-label">github releases</div>
+                                <div class="install-block-content" style="justify-content: flex-start; gap: 10px;">
+                                    <a href="https://github.com/julesklord/poshbuddy/releases" target="_blank" rel="noopener noreferrer" class="release-btn">windows x64</a>
+                                    <a href="https://github.com/julesklord/poshbuddy/releases" target="_blank" rel="noopener noreferrer" class="release-btn">linux x64</a>
+                                    <a href="https://github.com/julesklord/poshbuddy/releases" target="_blank" rel="noopener noreferrer" class="release-btn">macos x64</a>
+                                </div>
+                            </div>
+                            <div class="install-note">requires oh-my-posh binary in system PATH</div>
                         </div>
                     </div>
 
@@ -211,17 +321,29 @@
                         </div>
                         <div class="window-body">
                             <div class="links-grid">
-                                <a href="https://github.com/julesklord/poshbuddy" target="_blank" class="link-card">
+                                <a href="https://github.com/julesklord/poshbuddy" target="_blank" rel="noopener noreferrer" class="link-card">
                                     <strong>[github]</strong>
                                     <span>source & codebase</span>
                                 </a>
-                                <a href="https://github.com/julesklord/poshbuddy/wiki" target="_blank" class="link-card">
+                                <a href="https://github.com/julesklord/poshbuddy/wiki" target="_blank" rel="noopener noreferrer" class="link-card">
                                     <strong>[wiki]</strong>
                                     <span>full documentation</span>
                                 </a>
-                                <a href="https://aur.archlinux.org/packages/poshbuddy-bin" target="_blank" class="link-card">
+                                <a href="https://crates.io/crates/poshbuddy" target="_blank" rel="noopener noreferrer" class="link-card">
+                                    <strong>[crates.io]</strong>
+                                    <span>rust package registry</span>
+                                </a>
+                                <a href="https://aur.archlinux.org/packages/poshbuddy-bin" target="_blank" rel="noopener noreferrer" class="link-card">
                                     <strong>[aur]</strong>
-                                    <span>btw i use arch</span>
+                                    <span>arch linux package</span>
+                                </a>
+                                <a href="https://github.com/julesklord/poshbuddy/releases" target="_blank" rel="noopener noreferrer" class="link-card">
+                                    <strong>[releases]</strong>
+                                    <span>download binaries</span>
+                                </a>
+                                <a href="https://github.com/julesklord/poshbuddy/blob/main/CHANGELOG.md" target="_blank" rel="noopener noreferrer" class="link-card">
+                                    <strong>[changelog]</strong>
+                                    <span>version history</span>
                                 </a>
                             </div>
                         </div>
@@ -252,6 +374,23 @@
                         </div>
                     </div>
 
+                    <!-- TUI Mockup Preview window -->
+                    <div class="window win-tuipreview" id="win-tuipreview" onclick="focusWindow('win-tuipreview')">
+                        <div class="window-header">
+                            <div class="window-title">tui_mockup.png</div>
+                            <div class="window-controls">
+                                <button class="window-control-btn ctrl-min" onclick="minimizeWindow('win-tuipreview', 2)" title="Minimize"></button>
+                                <button class="window-control-btn ctrl-max" onclick="maximizeWindow('win-tuipreview')" title="Maximize"></button>
+                                <button class="window-control-btn ctrl-close" onclick="closeWindow('win-tuipreview', 2)" title="Close"></button>
+                            </div>
+                        </div>
+                        <div class="window-body">
+                            <div class="tui-preview-container">
+                                <img src="./tui-mockup.png" alt="PoshBuddy TUI Mockup" class="tui-preview-img">
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- Interactive Shell Mock window -->
                     <div class="window win-mockterm" id="win-mockterm" onclick="focusWindow('win-mockterm')">
                         <div class="window-header">
@@ -264,7 +403,7 @@
                         </div>
                         <div class="window-body">
                             <div class="terminal-scrollback" id="term-history">
-                                <div class="terminal-line term-output">PoshBuddy Interactive Terminal Simulator [v0.4.7]</div>
+                                <div class="terminal-line term-output">PoshBuddy Interactive Terminal Simulator [v0.6.1]</div>
                                 <div class="terminal-line term-output">Type 'help' to see list of valid commands. Try the clickable preset commands below!</div>
                             </div>
                             
@@ -278,6 +417,8 @@
                                 <button class="term-preset-chip" onclick="runPresetCmd('poshbuddy list themes')">list themes</button>
                                 <button class="term-preset-chip" onclick="runPresetCmd('poshbuddy set theme bubbles')">set theme bubbles</button>
                                 <button class="term-preset-chip" onclick="runPresetCmd('poshbuddy list fonts')">list fonts</button>
+                                <button class="term-preset-chip" onclick="runPresetCmd('poshbuddy backup list')">backup list</button>
+                                <button class="term-preset-chip" onclick="runPresetCmd('poshbuddy diagnostic')">diagnostic</button>
                                 <button class="term-preset-chip" onclick="runPresetCmd('neofetch')">neofetch</button>
                                 <button class="term-preset-chip" onclick="runPresetCmd('clear')">clear</button>
                             </div>
@@ -590,6 +731,173 @@
                                     <p><b>3. Safeguard Snapshots:</b> Under the hood, any edit triggers an automatic backup inside `docs/olds/` or the profile directory with a timestamp suffix (e.g. <code>.backup.20260603072810</code>). You can list and restore these via the TUI backup manager screen at any point.</p>
                                 </div>
 
+                                <!-- Requirements Section -->
+                                <div class="man-section" id="man-sec-requirements">
+                                    <h3>Requirements</h3>
+                                    <p><b>Runtime Dependencies:</b></p>
+                                    <ul style="list-style: none; padding-left: 0; font-size: 13px;">
+                                        <li style="margin-bottom: 6px;">• <b>Oh My Posh</b> — binary in system PATH. Install via <code>winget install JanDeDobbeleer.OhMyPosh</code> (Windows), <code>brew install jandedobbeleer/oh-my-posh/oh-my-posh</code> (macOS), or the official script.</li>
+                                        <li style="margin-bottom: 6px;">• <b>Nerd Font</b> — at least one patched font (FiraCode, JetBrainsMono, Hack, or CascadiaCode) configured in terminal emulator.</li>
+                                        <li style="margin-bottom: 6px;">• <b>PowerShell 7+</b> (recommended) or any supported shell: Bash, Zsh, Fish.</li>
+                                        <li style="margin-bottom: 6px;">• <b>Network connectivity</b> — for theme catalog synchronization and font downloads.</li>
+                                    </ul>
+                                    <p><b>Build Dependencies (from source):</b> Rust 1.85+, Git.</p>
+                                </div>
+
+                                <!-- Fresh Machine Setup Section -->
+                                <div class="man-section" id="man-sec-setup">
+                                    <h3>Fresh Machine Setup</h3>
+                                    <p>Use this checklist when setting up PoshBuddy on a new system:</p>
+                                    <div class="man-table-wrapper">
+                                        <table class="man-table">
+                                            <thead>
+                                                <tr><th style="width: 5%;">#</th><th>Step</th><th>Description</th></tr>
+                                            </thead>
+                                            <tbody>
+                                                <tr><td>1</td><td><b>Install Oh My Posh</b></td><td>Use winget, brew, or the official install script from the Oh My Posh docs.</td></tr>
+                                                <tr><td>2</td><td><b>Configure Nerd Font</b></td><td>Install a Nerd Font and set it as the terminal font. Use <code>poshbuddy install font</code> if needed.</td></tr>
+                                                <tr><td>3</td><td><b>Install Rust</b></td><td>If building from source: <code>curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh</code></td></tr>
+                                                <tr><td>4</td><td><b>Install PoshBuddy</b></td><td><code>cargo install poshbuddy</code> or download a release binary.</td></tr>
+                                                <tr><td>5</td><td><b>Run Diagnostics</b></td><td>Launch <code>poshbuddy</code> and press <code>[D]</code> to verify the environment.</td></tr>
+                                                <tr><td>6</td><td><b>Browse Theme Catalog</b></td><td>Press <code>[1]</code> to explore themes. Filter by name with the search bar.</td></tr>
+                                                <tr><td>7</td><td><b>Apply a Theme</b></td><td>Select a theme and press <code>Enter</code> to apply. A backup is created automatically.</td></tr>
+                                                <tr><td>8</td><td><b>Source Profile</b></td><td>Run <code>. \$PROFILE</code> (PowerShell) or <code>source ~/.bashrc</code> (Bash) to see the prompt.</td></tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+
+                                <!-- Troubleshooting Section -->
+                                <div class="man-section" id="man-sec-troubleshooting">
+                                    <h3>Troubleshooting</h3>
+                                    <div class="man-table-wrapper">
+                                        <table class="man-table">
+                                            <thead>
+                                                <tr><th>Symptom</th><th>Likely Cause</th><th>Resolution</th></tr>
+                                            </thead>
+                                            <tbody>
+                                                <tr>
+                                                    <td><b>Broken icons / squares</b></td>
+                                                    <td>Nerd Font not configured in terminal</td>
+                                                    <td><code>poshbuddy install font FiraCode</code> then set terminal font</td>
+                                                </tr>
+                                                <tr>
+                                                    <td><b>Theme not applying</b></td>
+                                                    <td>Profile markers missing or corrupted</td>
+                                                    <td>Run Diagnostic <code>[D]</code>, use Backup Manager <code>[V]</code> to restore</td>
+                                                </tr>
+                                                <tr>
+                                                    <td><b>Static theme preview</b></td>
+                                                    <td>PowerShell 7 not installed</td>
+                                                    <td>Install PowerShell 7 from <code>github.com/PowerShell/PowerShell</code></td>
+                                                </tr>
+                                                <tr>
+                                                    <td><b>Terminal latency</b></td>
+                                                    <td>Too many active segments</td>
+                                                    <td>Use Segment Manager <code>[3]</code> to disable unused segments</td>
+                                                </tr>
+                                                <tr>
+                                                    <td><b>No internet connection</b></td>
+                                                    <td>Network unreachable, timeout exceeded</td>
+                                                    <td>PoshBuddy falls back to offline mode. Use <code>--offline</code> flag to skip network checks.</td>
+                                                </tr>
+                                                <tr>
+                                                    <td><b>Timeout generating preview</b></td>
+                                                    <td>Theme JSON too large or shell startup slow</td>
+                                                    <td>Simplify theme, reduce segment count, or use a lighter theme</td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    <p style="margin-top: 10px;">The error lifecycle follows a strict recovery pipeline: <code>Error → Log → Diagnostic scan → Remediation suggestion → Retry</code>. If issues persist, open a ticket on GitHub with the diagnostic output.</p>
+                                </div>
+
+                                <!-- Architecture Overview Section -->
+                                <div class="man-section" id="man-sec-architecture">
+                                    <h3>Architecture Overview</h3>
+                                    <p>PoshBuddy is structured as an asynchronous, event-driven Rust application. The system is composed of three core layers:</p>
+                                    <p><b>1. Application State (<code>app/mod.rs</code> + <code>app/handlers.rs</code>):</b><br>
+                                    Maintains a reactive model of the UI state. The <code>AppMessage</code> enum carries events (theme applied, timeout, font installed) across Tokio mpsc channels. The handler layer bridges user input to service actions without blocking the UI redraw cycle.</p>
+                                    <p><b>2. Service Layer (<code>app/services.rs</code>):</b><br>
+                                    Business logic for theme fetching (Reqwest + Serde JSON), profile injection (marker-based algorithm), font installation (zip extraction), backup management (timestamped snapshots), and diagnostics. Each operation runs asynchronously on Tokio tasks.</p>
+                                    <p><b>3. Terminal UI (<code>ui/</code>):</b><br>
+                                    Built on Ratatui v0.30 with Crossterm backend. The drawing loop runs on the main thread while service tasks communicate via mpsc channels. Views include Welcome Dashboard, Themes Explorer, Font Manager, Segment Manager, Backup Manager, and Diagnostics.</p>
+                                    <p>See <b>Workspace 3</b> for the interactive architecture diagram with detailed component descriptions.</p>
+                                </div>
+
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ==========================================
+               WORKSPACE 5: changelog (CHANGELOG & RELEASES)
+               ========================================== -->
+            <div class="workspace workspace-tiled" data-workspace="5" id="workspace-5">
+                <div class="window win-changelog active-focus" id="win-changelog" onclick="focusWindow('win-changelog')">
+                    <div class="window-header">
+                        <div class="window-title">changelog.md</div>
+                        <div class="window-controls">
+                            <button class="window-control-btn ctrl-min" onclick="minimizeWindow('win-changelog', 5)" title="Minimize"></button>
+                            <button class="window-control-btn ctrl-max" onclick="maximizeWindow('win-changelog')" title="Maximize"></button>
+                            <button class="window-control-btn ctrl-close" onclick="closeWindow('win-changelog', 5)" title="Close"></button>
+                        </div>
+                    </div>
+                    <div class="window-body">
+                        <div class="changelog-container" id="changelog-content">
+                            <div class="changelog-header">
+                                <h2>CHANGELOG</h2>
+                                <span class="changelog-version">v0.6.1</span>
+                            </div>
+                            <div class="changelog-entries">
+                                <div class="changelog-entry">
+                                    <div class="changelog-date">2026-07-03</div>
+                                    <div class="changelog-title">v0.6.1 — Stability & Polish</div>
+                                    <ul class="changelog-list">
+                                        <li><span class="change-type fix">[fix]</span> Resolved theme application race condition on Windows</li>
+                                        <li><span class="change-type fix">[fix]</span> Fixed Nerd Font detection on macOS ARM64</li>
+                                        <li><span class="change-type improvement">[improvement]</span> Improved backup cleanup: retains last 50 snapshots</li>
+                                        <li><span class="change-type improvement">[improvement]</span> Enhanced CLI error messages with actionable suggestions</li>
+                                        <li><span class="change-type new">[new]</span> Added --dry-run flag for theme operations</li>
+                                        <li><span class="change-type new">[new]</span> New diagnostic check: terminal color support</li>
+                                    </ul>
+                                </div>
+                                <div class="changelog-entry">
+                                    <div class="changelog-date">2026-06-15</div>
+                                    <div class="changelog-title">v0.6.0 — Major Release</div>
+                                    <ul class="changelog-list">
+                                        <li><span class="change-type new">[new]</span> Segment Manager: toggle Git, Battery, Time, CPU segments surgically</li>
+                                        <li><span class="change-type new">[new]</span> Theme Preview: live preview without applying</li>
+                                        <li><span class="change-type new">[new]</span> Fish shell support added</li>
+                                        <li><span class="change-type new">[new]</span> Random theme picker (Dashboard: R)</li>
+                                        <li><span class="change-type improvement">[improvement]</span> Ratatui upgraded to v0.30 with new layout engine</li>
+                                        <li><span class="change-type improvement">[improvement]</span> Tokio upgraded to 1.x with full feature set</li>
+                                        <li><span class="change-type fix">[fix]</span> Memory optimization: reduced idle CPU to ~1%</li>
+                                    </ul>
+                                </div>
+                                <div class="changelog-entry">
+                                    <div class="changelog-date">2026-05-01</div>
+                                    <div class="changelog-title">v0.5.2 — Font & Theme Sync</div>
+                                    <ul class="changelog-list">
+                                        <li><span class="change-type new">[new]</span> Bulk font installer: install all Nerd Fonts at once (Dashboard: N)</li>
+                                        <li><span class="change-type improvement">[improvement]</span> Parallel theme catalog fetch (3x faster)</li>
+                                        <li><span class="change-type fix">[fix]</span> Profile injection edge cases for nested markers</li>
+                                    </ul>
+                                </div>
+                                <div class="changelog-entry">
+                                    <div class="changelog-date">2026-04-10</div>
+                                    <div class="changelog-title">v0.5.0 — Multi-Shell & Diagnostics</div>
+                                    <ul class="changelog-list">
+                                        <li><span class="change-type new">[new]</span> Bash & Zsh profile support</li>
+                                        <li><span class="change-type new">[new]</span> System Diagnostics view (Dashboard: D)</li>
+                                        <li><span class="change-type new">[new]</span> Backup Manager with rollback (Dashboard: V)</li>
+                                        <li><span class="change-type improvement">[improvement]</span> Serde-based surgical JSON editing</li>
+                                    </ul>
+                                </div>
+                            </div>
+                            <div class="changelog-footer">
+                                <a href="https://github.com/julesklord/poshbuddy/blob/main/CHANGELOG.md" target="_blank" rel="noopener noreferrer" class="changelog-link">View full changelog on GitHub →</a>
                             </div>
                         </div>
                     </div>
@@ -634,8 +942,30 @@
             // Drag and drop setup for floating window mode
             setupWindowDrag();
             
-            // TUI Workspace keybindings setup (Alt+1, Alt+2, etc.)
+            // TUI Workspace keybindings setup (Alt+1, Alt+2, Alt+3, etc.)
             setupKeybindings();
+            
+            // System theme detection (only on first visit)
+            try {
+                if (!localStorage.getItem('poshbuddy-theme-chosen')) {
+                    detectSystemTheme();
+                }
+            } catch (e) {
+                // localStorage not available (private browsing)
+            }
+            
+            // Report performance metrics
+            reportWebVitals();
+
+            // Hide help hint after 5 seconds
+            setTimeout(() => {
+                const hint = document.getElementById('help-hint');
+                if (hint) {
+                    hint.style.opacity = '0';
+                    hint.style.transform = 'translateX(50px)';
+                    setTimeout(() => { hint.style.display = 'none'; }, 500);
+                }
+            }, 8000);
         });
 
         // ── WORKSPACE CONTROLLER ──
@@ -901,7 +1231,7 @@
             }
         });
 
-        function setTheme(themeName, displayName) {
+        function setTheme(themeName, displayName, btnElement) {
             // Reset body classes
             document.body.className = `theme-${themeName}`;
             
@@ -909,13 +1239,21 @@
             document.querySelectorAll('.theme-opt').forEach(opt => {
                 opt.classList.remove('active');
             });
-            event.target.classList.add('active');
+            
+            // If called from a button click, use the clicked element
+            const targetBtn = btnElement || (window.event && window.event.target) || document.querySelector(`.theme-opt[onclick*="${themeName}"]`);
+            if (targetBtn && targetBtn.classList) {
+                targetBtn.classList.add('active');
+            }
             
             // Close dropdown and update button text
             document.getElementById('theme-drop').classList.remove('open');
             document.getElementById('theme-btn').textContent = `theme: ${displayName}`;
             
-            // Adjust CRT display if Nord or TokyoNight to fit aesthetics
+            // Remember user chose a theme
+            try { localStorage.setItem('poshbuddy-theme-chosen', 'true'); } catch (e) {}
+            
+            // Adjust CRT display for certain themes
             if (themeName === 'dracula' || themeName === 'tokyonight') {
                 if (!crtOn) toggleCRT();
             }
@@ -959,6 +1297,11 @@
                         &nbsp;&nbsp;<b>poshbuddy list themes</b> - List remote themes in catalog<br>
                         &nbsp;&nbsp;<b>poshbuddy set theme &lt;theme&gt;</b> - Download and apply theme (e.g. set theme bubbles)<br>
                         &nbsp;&nbsp;<b>poshbuddy list fonts</b> - List supported Nerd Fonts<br>
+                        &nbsp;&nbsp;<b>poshbuddy install font &lt;font&gt;</b> - Install a Nerd Font<br>
+                        &nbsp;&nbsp;<b>poshbuddy backup list</b> - List backup snapshots<br>
+                        &nbsp;&nbsp;<b>poshbuddy backup restore &lt;id&gt;</b> - Rollback to a snapshot<br>
+                        &nbsp;&nbsp;<b>poshbuddy diagnostic</b> - Run system diagnostics<br>
+                        &nbsp;&nbsp;<b>poshbuddy version</b> - Show build info<br>
                         &nbsp;&nbsp;<b>neofetch</b> - Print system ricing specifications<br>
                         &nbsp;&nbsp;<b>clear</b> - Reset scrollback history<br>
                       </div>
@@ -973,7 +1316,7 @@
                         OS: Arch Linux x86_64 / Windows<br>
                         Host: Web Sandbox Tiling Engine<br>
                         Kernel: Rust Async Standard 2024<br>
-                        Uptime: v0.4.7 session runtime<br>
+                        Uptime: v0.6.1 session runtime<br>
                         Shell: poshbuddy/tui CLI<br>
                         Theme: ${document.getElementById('theme-btn').textContent.replace('theme: ', '')}<br>
                         Terminal: Ratatui crossterm event-loop
@@ -1041,6 +1384,65 @@
                         <span style="color: var(--green)">Font ${escapeHTML(fontName)} ready for Terminal shell layout properties.</span>
                       </div>
                     `);
+                } else if (cleanCmd === 'poshbuddy backup list' || cleanCmd === 'poshbuddy list backups') {
+                    appendTerminalLine(`
+                      <div class="term-output">
+                        Scanning profile directory for snapshots...<br>
+                        Found 5 backup snapshots:<br>
+                        <br>
+                        <table style="width: 100%; border-collapse: collapse; font-size: 11px;">
+                          <tr style="border-bottom: 1px solid var(--border); color: var(--secondary)">
+                            <th>#</th><th>Timestamp</th><th>Size</th><th>Action</th>
+                          </tr>
+                          <tr><td>1</td><td>20260630_1423</td><td>1.2 KB</td><td style="color: var(--green)">[active]</td></tr>
+                          <tr><td>2</td><td>20260628_0911</td><td>1.2 KB</td><td style="color: var(--yellow)">[restore available]</td></tr>
+                          <tr><td>3</td><td>20260625_1745</td><td>1.1 KB</td><td>[restore available]</td></tr>
+                          <tr><td>4</td><td>20260620_1032</td><td>1.3 KB</td><td>[restore available]</td></tr>
+                          <tr><td>5</td><td>20260615_0800</td><td>1.2 KB</td><td>[restore available]</td></tr>
+                        </table>
+                        <br>
+                        Use <b>poshbuddy backup restore &lt;id&gt;</b> to rollback a snapshot.
+                      </div>
+                    `);
+                } else if (cleanCmd === 'poshbuddy diagnostic' || cleanCmd === 'poshbuddy diag') {
+                    const randDiag = Math.floor(70 + Math.random() * 30);
+                    appendTerminalLine(`
+                      <div class="term-output">
+                        Running system diagnostics...<br>
+                        <br>
+                        <table style="width: 100%; border-collapse: collapse; font-size: 11px;">
+                          <tr><td>Oh My Posh binary</td><td style="color: var(--green)">[found] v23.0.1</td></tr>
+                          <tr><td>PowerShell version</td><td style="color: var(--green)">[found] v7.4.6</td></tr>
+                          <tr><td>Nerd Fonts detected</td><td style="color: var(--green)">[ok] 3 fonts</td></tr>
+                          <tr><td>Network connectivity</td><td style="color: var(--green)">[ok] 12ms latency</td></tr>
+                          <tr><td>Theme catalog cache</td><td style="color: var(--green)">[ok] ${randDiag} themes cached</td></tr>
+                          <tr><td>Profile markers</td><td style="color: var(--green)">[ok] valid</td></tr>
+                          <tr><td>Terminal color support</td><td style="color: var(--green)">[ok] truecolor</td></tr>
+                        </table>
+                      </div>
+                    `);
+                } else if (cleanCmd.startsWith('poshbuddy backup restore')) {
+                    const backupId = cmd.split(' ').slice(3).join(' ').trim() || '1';
+                    appendTerminalLine(`
+                      <div class="term-output">
+                        Restoring snapshot <b>#${escapeHTML(backupId)}</b>...<br>
+                        Reading backup archive contents...<br>
+                        Current profile saved as backup timestamp [20260704_${String(Date.now()).slice(-4)}].<br>
+                        Archived content successfully written to profile target. [OK]<br>
+                        <span style="color: var(--green); font-weight: bold;">Profile restored to snapshot #${escapeHTML(backupId)} state!</span><br>
+                        Run <b>. \$PROFILE</b> in PowerShell to apply.
+                      </div>
+                    `);
+                } else if (cleanCmd === 'poshbuddy version' || cleanCmd === 'poshbuddy --version') {
+                    appendTerminalLine(`
+                      <div class="term-output">
+                        poshbuddy v0.6.1 (rust 2024 edition)<br>
+                        built with: ratatui v0.30, tokio v1.x, reqwest v0.12, serde v1.0<br>
+                        target: x86_64-unknown-linux-gnu
+                      </div>
+                    `);
+                } else if (cleanCmd.startsWith('poshbuddy ')) {
+                    appendTerminalLine(`<div class="term-output" style="color: var(--red)">poshbuddy: unknown subcommand '${escapeHTML(cmd.split(' ').slice(1).join(' '))}'. Try 'help' for available commands.</div>`);
                 } else {
                     appendTerminalLine(`<div class="term-output" style="color: var(--red)">poshbuddy: command not found: '${escapeHTML(cmd)}'. Type 'help' to see syntax instructions.</div>`);
                 }
@@ -1062,17 +1464,22 @@
         }
 
         // ── COPY TO CLIPBOARD ──
-        function copyInstallCmd() {
-            const text = document.getElementById('cmd-string').textContent;
+        function copyCmd(cmdId) {
+            const text = document.getElementById(cmdId).textContent;
+            const btn = event.target.closest('button');
             navigator.clipboard.writeText(text).then(() => {
-                const btn = document.getElementById('copy-btn');
+                const originalText = btn.textContent;
                 btn.textContent = '[copied!]';
                 btn.style.color = 'var(--green)';
                 setTimeout(() => {
-                    btn.textContent = '[copy]';
+                    btn.textContent = originalText;
                     btn.style.color = '';
                 }, 2000);
             });
+        }
+
+        function copyInstallCmd() {
+            copyCmd('cmd-crates');
         }
 
         // ── MANUAL SEARCH FILTER ──
@@ -1198,13 +1605,84 @@
         // ── GLOBAL KEYBINDINGS ──
         function setupKeybindings() {
             document.addEventListener('keydown', (e) => {
-                // Switch workspaces with Alt+1, Alt+2, Alt+3, Alt+4
-                if (e.altKey && e.key >= '1' && e.key <= '4') {
+                // Switch workspaces with Alt+1, Alt+2, Alt+3, Alt+4, Alt+5
+                if (e.altKey && e.key >= '1' && e.key <= '5') {
                     e.preventDefault();
                     switchWorkspace(parseInt(e.key));
                 }
+                // Toggle keyboard shortcuts with '?' or Shift+'/'
+                if (e.key === '?' || (e.key === '/' && e.shiftKey)) {
+                    e.preventDefault();
+                    toggleShortcuts();
+                }
+                // Cycle layout with 'L' key
+                if (e.key.toLowerCase() === 'l' && !e.altKey && !e.ctrlKey && !e.metaKey) {
+                    if (!e.target.closest('input') && !e.target.closest('textarea')) {
+                        e.preventDefault();
+                        cycleLayout();
+                    }
+                }
+                // Toggle CRT with 'C' key
+                if (e.key.toLowerCase() === 'c' && !e.altKey && !e.ctrlKey && !e.metaKey) {
+                    if (!e.target.closest('input') && !e.target.closest('textarea')) {
+                        e.preventDefault();
+                        toggleCRT();
+                    }
+                }
             });
         }
+
+        // ── KEYBOARD SHORTCUTS OVERLAY ──
+        function toggleShortcuts() {
+            const overlay = document.getElementById('shortcuts-overlay');
+            overlay.classList.toggle('open');
+        }
+
+        // Close shortcuts overlay on Escape
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                const overlay = document.getElementById('shortcuts-overlay');
+                if (overlay.classList.contains('open')) {
+                    overlay.classList.remove('open');
+                }
+            }
+        });
+
+        // Close shortcuts overlay on click outside
+        document.getElementById('shortcuts-overlay').addEventListener('click', (e) => {
+            if (e.target === e.currentTarget) {
+                e.currentTarget.classList.remove('open');
+            }
+        });
+
+        // ── SYSTEM THEME DETECTION ──
+        function detectSystemTheme() {
+            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)');
+            if (!prefersDark.matches) {
+                // If user prefers light, switch to latte
+                setTheme('latte', 'latte');
+                // Remove active from mocha, add to latte
+                document.querySelectorAll('.theme-opt').forEach(opt => {
+                    opt.classList.remove('active');
+                    if (opt.textContent.trim() === 'latte') {
+                        opt.classList.add('active');
+                    }
+                });
+            }
+        }
+
+        // ── PERFORMANCE METRICS ──
+        function reportWebVitals() {
+            if (window.performance && window.performance.timing) {
+                const timing = window.performance.timing;
+                const loadTime = timing.loadEventEnd - timing.navigationStart;
+                const domReady = timing.domContentLoadedEventEnd - timing.navigationStart;
+                console.log(`[poshbuddy] Page load: ${loadTime}ms, DOM ready: ${domReady}ms`);
+            }
+        }
     </script>
+
+    <!-- Help hint -->
+    <div class="help-hint" id="help-hint">Press <kbd>?</kbd> for keyboard shortcuts</div>
 </body>
 </html>

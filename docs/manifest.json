@@ -1,0 +1,18 @@
+{
+  "name": "PoshBuddy",
+  "short_name": "poshbuddy",
+  "description": "Surgical Theme Management for Oh My Posh — Rust TUI & CLI tool",
+  "start_url": "/poshbuddy/",
+  "display": "standalone",
+  "background_color": "#1e1e2e",
+  "theme_color": "#1e1e2e",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
