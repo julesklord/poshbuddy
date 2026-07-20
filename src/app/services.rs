@@ -1,5 +1,5 @@
 use crate::app::models::*;
-use crate::app::{OMP_BINARY, contains_ignore_ascii_case};
+use crate::app::{contains_ignore_ascii_case, get_omp_binary};
 use std::collections::HashSet;
 use std::fs;
 use std::io;
@@ -54,7 +54,7 @@ impl App {
 
             if let Ok(content) = fs::read_to_string(profile) {
                 for line in content.lines() {
-                    if line.contains("oh-my-posh init") && line.contains("--config") {
+                    if (line.contains("oh-my-posh init") || line.contains("ohmyposh init")) && line.contains("--config") {
                         // Intentar extraer la ruta entre comillas o después de --config
                         let parts: Vec<&str> = line.split("--config").collect();
                         if parts.len() > 1 {
@@ -86,32 +86,42 @@ impl App {
     /// If not found, searches in popular fallback installation directories.
     /// If found in a fallback directory, dynamically prepends that directory to the process's PATH.
     pub fn check_omp_installed(&self) -> bool {
-        let binary_name = if cfg!(windows) {
-            "oh-my-posh.exe"
+        let binary_names = if cfg!(windows) {
+            vec!["oh-my-posh.exe", "ohmyposh.exe"]
         } else {
-            "oh-my-posh"
+            vec!["oh-my-posh", "ohmyposh"]
         };
 
-        // 1. Try to spawn 'oh-my-posh --version' directly
-        if std::process::Command::new(binary_name)
-            .arg("--version")
-            .stdout(std::process::Stdio::null())
-            .stderr(std::process::Stdio::null())
-            .status()
-            .map(|s| s.success())
-            .unwrap_or(false)
-        {
-            return true;
+        for &binary_name in &binary_names {
+            // 1. Try to spawn 'binary_name --version' directly
+            if std::process::Command::new(binary_name)
+                .arg("--version")
+                .stdout(std::process::Stdio::null())
+                .stderr(std::process::Stdio::null())
+                .status()
+                .map(|s| s.success())
+                .unwrap_or(false)
+            {
+                let _ = crate::app::OMP_BINARY_NAME.set(binary_name.to_string());
+                return true;
+            }
         }
 
         // 2. If not found, check common fallback paths
         let mut fallbacks = Vec::new();
         if cfg!(windows) {
             if let Some(local_appdata) = std::env::var_os("LOCALAPPDATA") {
+                let local_path = PathBuf::from(local_appdata);
                 fallbacks.push(
-                    PathBuf::from(local_appdata)
+                    local_path.clone()
                         .join("Programs")
                         .join("oh-my-posh")
+                        .join("bin"),
+                );
+                fallbacks.push(
+                    local_path
+                        .join("Programs")
+                        .join("ohmyposh")
                         .join("bin"),
                 );
             }
@@ -125,7 +135,16 @@ impl App {
                         .join("oh-my-posh")
                         .join("bin"),
                 );
+                fallbacks.push(
+                    user_path
+                        .join("AppData")
+                        .join("Local")
+                        .join("Programs")
+                        .join("ohmyposh")
+                        .join("bin"),
+                );
                 fallbacks.push(user_path.join(".oh-my-posh").join("bin"));
+                fallbacks.push(user_path.join(".ohmyposh").join("bin"));
                 fallbacks.push(user_path.join("scoop").join("shims"));
             }
         } else {
@@ -140,21 +159,24 @@ impl App {
         }
 
         for dir in fallbacks {
-            let bin_path = dir.join(binary_name);
-            if bin_path.is_file() {
-                // Found it! Prepend to the PATH variable for this process and future child processes
-                if let Some(paths) = std::env::var_os("PATH") {
-                    let mut current_paths: Vec<PathBuf> = std::env::split_paths(&paths).collect();
-                    if !current_paths.contains(&dir) {
-                        current_paths.insert(0, dir);
-                        if let Ok(new_path) = std::env::join_paths(current_paths) {
-                            unsafe {
-                                std::env::set_var("PATH", new_path);
+            for &binary_name in &binary_names {
+                let bin_path = dir.join(binary_name);
+                if bin_path.is_file() {
+                    // Found it! Prepend to the PATH variable for this process and future child processes
+                    if let Some(paths) = std::env::var_os("PATH") {
+                        let mut current_paths: Vec<PathBuf> = std::env::split_paths(&paths).collect();
+                        if !current_paths.contains(&dir) {
+                            current_paths.insert(0, dir);
+                            if let Ok(new_path) = std::env::join_paths(current_paths) {
+                                unsafe {
+                                    std::env::set_var("PATH", new_path);
+                                }
                             }
                         }
                     }
+                    let _ = crate::app::OMP_BINARY_NAME.set(binary_name.to_string());
+                    return true;
                 }
-                return true;
             }
         }
 
@@ -753,7 +775,7 @@ impl App {
             return;
         }
 
-        let cmd = OMP_BINARY;
+        let cmd = get_omp_binary();
 
         let font_name_cloned = font_name.clone();
         tokio::spawn(async move {
@@ -778,7 +800,7 @@ impl App {
     /// Installs all available fonts sequentially with progress reporting
     pub fn install_all_fonts(&self, tx: mpsc::Sender<AppMessage>) {
         let fonts = self.fonts.clone();
-        let cmd = OMP_BINARY;
+        let cmd = get_omp_binary();
 
         if fonts.is_empty() {
             let _ = tx.try_send(AppMessage::Error(
@@ -934,7 +956,7 @@ impl App {
 
         let theme_cloned = theme.clone();
         let themes_dir = self.themes_dir.clone();
-        let cmd = OMP_BINARY.to_string();
+        let cmd = get_omp_binary().to_string();
 
         let handle = tokio::spawn(async move {
             // Add a small debounce delay to avoid spamming requests when searching rapidly
@@ -1297,19 +1319,20 @@ except Exception:
                 .unwrap_or_default();
 
             let path_str = theme_path.to_string_lossy();
+            let omp = get_omp_binary();
             let config_line = if file_name.contains("bash")
                 || file_name == ".profile"
                 || file_name == ".bash_profile"
             {
-                format!("eval \"$(oh-my-posh init bash --config '{}')\"", path_str)
+                format!("eval \"$({} init bash --config '{}')\"", omp, path_str)
             } else if file_name.contains("zsh") || file_name == ".zprofile" {
-                format!("eval \"$(oh-my-posh init zsh --config '{}')\"", path_str)
+                format!("eval \"$({} init zsh --config '{}')\"", omp, path_str)
             } else if file_name.contains("fish") || file_name.ends_with(".fish") {
-                format!("oh-my-posh init fish --config '{}' | source", path_str)
+                format!("{} init fish --config '{}' | source", omp, path_str)
             } else {
                 format!(
-                    "oh-my-posh init pwsh --config \"{}\" | Out-String | Invoke-Expression",
-                    path_str
+                    "{} init pwsh --config \"{}\" | Out-String | Invoke-Expression",
+                    omp, path_str
                 )
             };
 

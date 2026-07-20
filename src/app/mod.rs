@@ -8,7 +8,17 @@ pub use models::*;
 pub mod handlers;
 pub mod services;
 
-pub const OMP_BINARY: &str = "oh-my-posh";
+pub static OMP_BINARY_NAME: std::sync::OnceLock<String> = std::sync::OnceLock::new();
+
+pub fn get_omp_binary() -> &'static str {
+    OMP_BINARY_NAME.get_or_init(|| {
+        if cfg!(windows) {
+            "oh-my-posh.exe".to_string()
+        } else {
+            "oh-my-posh".to_string()
+        }
+    })
+}
 
 /// Helper function for zero-allocation case-insensitive ASCII substring matching
 pub fn contains_ignore_ascii_case(haystack: &str, needle: &str) -> bool {
