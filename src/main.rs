@@ -3,11 +3,12 @@ mod app;
 mod assets;
 mod backup;
 mod cli;
+mod diagnostic;
 mod plugin_installer;
 mod ui;
 
 use crate::app::App;
-use crate::cli::{Cli, Commands, InstallTarget, ListTarget, SetTarget};
+use crate::cli::{Cli, Commands, InstallTarget, ListTarget, SetTarget, ToggleTarget};
 use clap::Parser;
 use crossterm::{
     event::{self, Event},
@@ -38,10 +39,15 @@ async fn handle_cli_command(command: Commands) -> Result<(), Box<dyn Error>> {
 
     match command {
         Commands::Set { target } => handle_set_command(target, &mut app, tx, &mut rx).await?,
+        Commands::Toggle { target } => handle_toggle_command(target, &mut app).await?,
         Commands::Install { target } => {
             handle_install_command(target, &mut app, tx, &mut rx).await?
         }
         Commands::List { target } => handle_list_command(target, &mut app, tx, &mut rx).await?,
+        Commands::Doctor => {
+            let report = app.run_diagnostics();
+            println!("{}", report);
+        }
     }
 
     Ok(())
@@ -86,6 +92,48 @@ async fn handle_set_command(
                 }
             } else {
                 println!("❌ Error: Theme '{}' not found.", name);
+            }
+        }
+        SetTarget::Segment { name } => {
+            let seg = app
+                .segments
+                .iter()
+                .find(|s| {
+                    s.name.eq_ignore_ascii_case(&name) || s.segment_type.eq_ignore_ascii_case(&name)
+                })
+                .cloned();
+
+            if let Some(s) = seg {
+                match app.toggle_segment(&s) {
+                    Ok(_) => println!("✅ Segment '{}' toggled successfully!", s.name),
+                    Err(e) => println!("❌ Error toggling segment: {}", e),
+                }
+            } else {
+                println!("❌ Error: Segment '{}' not found.", name);
+            }
+        }
+    }
+    Ok(())
+}
+
+async fn handle_toggle_command(target: ToggleTarget, app: &mut App) -> Result<(), Box<dyn Error>> {
+    match target {
+        ToggleTarget::Segment { name } => {
+            let seg = app
+                .segments
+                .iter()
+                .find(|s| {
+                    s.name.eq_ignore_ascii_case(&name) || s.segment_type.eq_ignore_ascii_case(&name)
+                })
+                .cloned();
+
+            if let Some(s) = seg {
+                match app.toggle_segment(&s) {
+                    Ok(_) => println!("✅ Segment '{}' toggled successfully!", s.name),
+                    Err(e) => println!("❌ Error toggling segment: {}", e),
+                }
+            } else {
+                println!("❌ Error: Segment '{}' not found.", name);
             }
         }
     }
@@ -174,6 +222,22 @@ async fn handle_list_command(
                     break;
                 }
             }
+        }
+        ListTarget::Segments => {
+            println!(
+                "\n{:<25} {:<15} {:<20} {:<10}",
+                "SEGMENT NAME", "TYPE", "CATEGORY", "STATUS"
+            );
+            println!("{:-<75}", "");
+            for seg in &app.segments {
+                let active = app.is_segment_active(seg);
+                let status = if active { "ENABLED" } else { "DISABLED" };
+                println!(
+                    "{:<25} {:<15} {:<20} {:<10}",
+                    seg.name, seg.segment_type, seg.category, status
+                );
+            }
+            println!();
         }
     }
     Ok(())

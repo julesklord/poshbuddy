@@ -441,7 +441,7 @@ fn render_quick_steps(f: &mut Frame, area: Rect, app: &App) {
         ("󰔉", " Randomize Style  ", "R", "4", false),
         ("󰏔", " Install ALL Fonts", "N", "5", false),
         ("󰙲", " Terminal Icons   ", "I", "6", false),
-        ("󰙔", " Diagnostics      ", "D", "7", true), // Coming soon
+        ("󰙔", " Diagnostics      ", "D", "7", false),
         ("󰁯", " Manual Backup    ", "B", "8", false),
     ];
 

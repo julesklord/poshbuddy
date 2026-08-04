@@ -5,6 +5,22 @@ All notable changes to PoshBuddy will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.0] - 2026-08-04
+
+### Added
+- **Dynamic Official Schema Sync**: Automatic background fetching and parsing of all 117+ official segments from Oh My Posh's upstream repository (`JanDeDobbeleer/oh-my-posh`).
+- **Bulletproof Segment Template Guards**: Enclosed all segment properties (`.Full`, `.Context`, `.Profile`, `.Track`, `.CumulativeTotal`, `.FormattedMs`) in Go template conditional guards (`{{ if ... }}`) to prevent Oh My Posh rendering panics and `unable to create text based on template` errors.
+- **Active Prompt Preview Bar**: Added a thin preview box above navigation tabs displaying the live ANSI prompt or active segment structure.
+- **Diagnostics Engine (`poshbuddy doctor`)**: Comprehensive system, shell profile syntax, font, and binary health diagnostic tool.
+
+## [0.7.0] - 2026-08-04
+
+### Added
+- **Complete Oh My Posh Segment Engine & Catalog**: Integrated 70+ official segments across 6 categories (Version Control, System, Development, Package Managers, Cloud, Time) with surgical JSON manipulation (`add_segment`, `remove_segment`, `toggle_segment`, `move_segment`).
+- **Active Prompt Preview Bar**: Added a thin preview box above the navigation tabs displaying the live rendering or dynamic segment structure of the active theme.
+- **Diagnostics Module (`poshbuddy doctor` / `poshbuddy diagnostics`)**: Added system, binary, font, profile syntax, and permission health checks in both TUI and CLI.
+- **CLI Segment Commands**: Added `poshbuddy list segments`, `poshbuddy toggle segment <name>`, and `poshbuddy set segment <name>`.
+
 ## [0.6.1] - 2026-06-30
 
 ### Changed

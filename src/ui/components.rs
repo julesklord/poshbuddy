@@ -71,6 +71,99 @@ pub(crate) fn render_title_bar(f: &mut Frame, area: Rect, app: &App) {
     );
 }
 
+// ── Active Prompt / Theme Preview Bar (3 lines with rounded border) ────────────
+pub(crate) fn render_active_prompt_bar(f: &mut Frame, area: Rect, app: &App) {
+    let theme_name = app
+        .active_config_path
+        .as_ref()
+        .and_then(|p| p.file_name())
+        .and_then(|s| s.to_str())
+        .map(|s| s.replace(".omp.json", ""))
+        .unwrap_or_else(|| "Default Theme".to_string());
+
+    let title = format!(" 🎨 Active Theme Preview — {} ", theme_name);
+
+    let block = Block::default()
+        .borders(Borders::ALL)
+        .border_type(BorderType::Rounded)
+        .border_style(Style::default().fg(Color::Rgb(55, 75, 100)))
+        .title(Span::styled(
+            title,
+            Style::default().fg(C_ACTIVE).add_modifier(Modifier::BOLD),
+        ));
+
+    use ansi_to_tui::IntoText as _;
+    if !app.active_theme_preview.is_empty() {
+        let text = app
+            .active_theme_preview
+            .as_bytes()
+            .into_text()
+            .unwrap_or_else(|_| Line::from(app.active_theme_preview.as_str()).into());
+        f.render_widget(
+            Paragraph::new(text).block(block).wrap(Wrap { trim: false }),
+            area,
+        );
+        return;
+    }
+
+    // Dynamic fallback prompt preview constructed from active segments
+    let mut spans = vec![Span::raw(" ")];
+    let active_types: Vec<&str> = app
+        .segments
+        .iter()
+        .filter(|s| app.is_segment_active(s))
+        .map(|s| s.segment_type.as_str())
+        .collect();
+
+    if active_types.is_empty() {
+        spans.push(Span::styled(
+            " [ No active segments enabled ]",
+            Style::default().fg(C_DIM),
+        ));
+    } else {
+        for (idx, seg_type) in active_types.iter().enumerate() {
+            let (icon, sample_text, bg_color) = match *seg_type {
+                "path" => ("󰔰 ", "~/poshbuddy", Color::Rgb(59, 130, 246)),
+                "git" => ("󰘬 ", "main", Color::Rgb(245, 158, 11)),
+                "session" => ("󰨞 ", "user@localhost", Color::Rgb(75, 85, 99)),
+                "node" => ("󰎙 ", "v20.18.0", Color::Rgb(16, 185, 129)),
+                "python" => ("󰌠 ", "v3.12.2", Color::Rgb(59, 130, 246)),
+                "rust" => ("󱘗 ", "1.85.0", Color::Rgb(249, 115, 22)),
+                "go" => ("󰟓 ", "go1.22", Color::Rgb(6, 182, 212)),
+                "docker" => ("󰡨 ", "default", Color::Rgb(2, 132, 199)),
+                "time" => ("󱑎 ", "22:15", Color::Rgb(31, 41, 55)),
+                "battery" => ("󰁹 ", "100%", Color::Rgb(16, 185, 129)),
+                "executiontime" => ("󱎫 ", "12ms", Color::Rgb(245, 158, 11)),
+                "os" => ("󰍹 ", "Linux", Color::Rgb(55, 65, 81)),
+                "status" => ("󰄬 ", "0", Color::Rgb(16, 185, 129)),
+                "sysinfo" => ("󰍛 ", "42%", Color::Rgb(107, 114, 128)),
+                _ => ("󰓣 ", *seg_type, Color::Rgb(97, 175, 239)),
+            };
+
+            spans.push(Span::styled(
+                format!(" {} {} ", icon, sample_text),
+                Style::default()
+                    .bg(bg_color)
+                    .fg(C_WHITE)
+                    .add_modifier(Modifier::BOLD),
+            ));
+
+            if idx + 1 < active_types.len() {
+                spans.push(Span::styled("", Style::default().fg(bg_color)));
+            } else {
+                spans.push(Span::styled(" ", Style::default().fg(bg_color)));
+            }
+        }
+    }
+
+    f.render_widget(
+        Paragraph::new(Line::from(spans))
+            .block(block)
+            .wrap(Wrap { trim: false }),
+        area,
+    );
+}
+
 // ── Tab bar (3 lines with border bottom) ──────────────────────────────────────
 pub(crate) fn render_tab_bar(f: &mut Frame, area: Rect, app: &App) {
     let tabs: &[(&str, &str, ActiveView)] = &[

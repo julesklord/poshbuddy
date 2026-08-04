@@ -1,4 +1,4 @@
-use crate::app::{AppMessage, FontAsset, RemoteTheme};
+use crate::app::{AppMessage, FontAsset, RemoteTheme, SegmentAsset};
 use std::path::PathBuf;
 use tokio::sync::mpsc;
 
@@ -6,7 +6,8 @@ use tokio::sync::mpsc;
 pub async fn setup_app_task(tx: mpsc::Sender<AppMessage>, themes_dir: PathBuf) {
     let themes_url = "https://api.github.com/repos/JanDeDobbeleer/oh-my-posh/contents/themes";
     let fonts_url = "https://api.github.com/repos/ryanoasis/nerd-fonts/contents/patched-fonts";
-    setup_app_task_with_urls(tx, themes_dir, themes_url, fonts_url).await;
+    let schema_url = OFFICIAL_SCHEMA_URL;
+    setup_app_task_with_urls(tx, themes_dir, themes_url, fonts_url, Some(schema_url)).await;
 }
 
 use std::sync::OnceLock;
@@ -100,32 +101,25 @@ pub async fn download_to_temp(name: &str, url: &str) -> Result<std::path::PathBu
         .map_err(|e| format!("Failed to download theme for preview: {}", e))?;
 
     if !response.status().is_success() {
-        return Err(format!("Server returned error: {}", response.status()));
+        return Err(format!("Download failed: HTTP {}", response.status()));
     }
 
+    let temp_dir = std::env::temp_dir().join("poshbuddy_previews");
+    tokio::fs::create_dir_all(&temp_dir)
+        .await
+        .map_err(|e| format!("Failed to create preview dir: {}", e))?;
+
+    let file_path = temp_dir.join(format!("{}.omp.json", name));
     let bytes = response
         .bytes()
         .await
-        .map_err(|e| format!("Failed to read theme content: {}", e))?;
+        .map_err(|e| format!("Network transfer failed: {}", e))?;
 
-    let temp_file = tempfile::Builder::new()
-        .prefix("poshbuddy_preview_")
-        .suffix(".omp.json")
-        .tempfile()
-        .map_err(|e| format!("Failed to create temporary file: {}", e))?;
-
-    let (std_file, temp_path) = temp_file
-        .keep()
-        .map_err(|e| format!("Failed to keep temporary file: {}", e))?;
-
-    let mut tokio_file = tokio::fs::File::from_std(std_file);
-    use tokio::io::AsyncWriteExt;
-    tokio_file
-        .write_all(&bytes)
+    tokio::fs::write(&file_path, &bytes)
         .await
-        .map_err(|e| format!("Failed to write preview file: {}", e))?;
+        .map_err(|e| format!("Disk write failed: {}", e))?;
 
-    Ok(temp_path)
+    Ok(file_path)
 }
 
 pub async fn setup_app_task_with_urls(
@@ -133,6 +127,7 @@ pub async fn setup_app_task_with_urls(
     _themes_dir: std::path::PathBuf,
     themes_url: &str,
     fonts_url: &str,
+    schema_url: Option<&str>,
 ) {
     let client = get_client();
 
@@ -203,6 +198,192 @@ pub async fn setup_app_task_with_urls(
         // Sending the font metadata back to the main UI loop
         if tx.send(AppMessage::FontsLoaded(fonts)).await.is_err() {}
     }
+
+    // 3. Fetching official Oh My Posh JSON schema to keep segment definitions up to date
+    if let Some(s_url) = schema_url {
+        let segs_res = fetch_official_segments_from_url(s_url).await;
+        if let Ok(official_segments) = segs_res {
+            let _ = tx.send(AppMessage::SegmentsLoaded(official_segments)).await;
+        }
+    }
+}
+
+/// URL to official Oh My Posh JSON schema in official repository
+pub const OFFICIAL_SCHEMA_URL: &str =
+    "https://raw.githubusercontent.com/JanDeDobbeleer/oh-my-posh/main/themes/schema.json";
+
+/// Helper function to parse segment assets directly from official Oh My Posh JSON schema
+pub fn parse_segments_from_schema(schema_text: &str) -> Vec<SegmentAsset> {
+    let mut segments = Vec::new();
+    let Ok(json): Result<serde_json::Value, _> = serde_json::from_str(schema_text) else {
+        return segments;
+    };
+
+    let defs = json.get("definitions").or_else(|| json.get("$defs"));
+    let seg_all_of = defs
+        .and_then(|d| d.get("segment"))
+        .and_then(|s| s.get("allOf"))
+        .and_then(|a| a.as_array());
+
+    if let Some(all_of) = seg_all_of {
+        for item in all_of {
+            let if_part = item.get("if");
+            let then_part = item.get("then");
+
+            let seg_type = if_part
+                .and_then(|i| i.get("properties"))
+                .and_then(|p| p.get("type"))
+                .and_then(|t| t.get("const").or_else(|| t.get("default")))
+                .and_then(|v| v.as_str());
+
+            if let Some(st) = seg_type {
+                if st == "prompt" || st == "rprompt" {
+                    continue;
+                }
+
+                let title = then_part
+                    .and_then(|t| t.get("title"))
+                    .and_then(|v| v.as_str())
+                    .unwrap_or(st);
+
+                let description = then_part
+                    .and_then(|t| t.get("description"))
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("Official Oh My Posh segment")
+                    .to_string();
+
+                let lower_title = title.to_lowercase();
+                let category = if lower_title.contains("git")
+                    || lower_title.contains("scm")
+                    || lower_title.contains("version")
+                    || lower_title.contains("fossil")
+                    || lower_title.contains("mercurial")
+                    || lower_title.contains("subversion")
+                {
+                    "Version Control"
+                } else if lower_title.contains("cloud")
+                    || lower_title.contains("docker")
+                    || lower_title.contains("aws")
+                    || lower_title.contains("azure")
+                    || lower_title.contains("kube")
+                    || lower_title.contains("gcp")
+                    || lower_title.contains("terraform")
+                {
+                    "Cloud"
+                } else if lower_title.contains("lang")
+                    || lower_title.contains("node")
+                    || lower_title.contains("python")
+                    || lower_title.contains("rust")
+                    || lower_title.contains("cli")
+                    || lower_title.contains("go")
+                    || lower_title.contains("java")
+                    || lower_title.contains("dotnet")
+                    || lower_title.contains("php")
+                    || lower_title.contains("ruby")
+                {
+                    "Development"
+                } else if lower_title.contains("time")
+                    || lower_title.contains("date")
+                    || lower_title.contains("clock")
+                {
+                    "Time"
+                } else if lower_title.contains("package")
+                    || lower_title.contains("npm")
+                    || lower_title.contains("pnpm")
+                    || lower_title.contains("yarn")
+                    || lower_title.contains("cargo")
+                    || lower_title.contains("composer")
+                {
+                    "Package Managers"
+                } else {
+                    "System"
+                };
+
+                let clean_name = title
+                    .replace(" Segment", "")
+                    .replace(" segment", "")
+                    .replace(" CLI", "");
+
+                segments.push(SegmentAsset {
+                    name: clean_name,
+                    segment_type: st.to_string(),
+                    description,
+                    category: category.to_string(),
+                });
+            }
+        }
+    }
+
+    if segments.is_empty() {
+        let defs_map_opt = defs.and_then(|v| v.as_object());
+        if let Some(defs_map) = defs_map_opt {
+            for (key, val) in defs_map {
+                let title = match val.get("title").and_then(|t| t.as_str()) {
+                    Some(t)
+                        if t.to_lowercase().contains("segment") || key.ends_with("_segment") =>
+                    {
+                        t
+                    }
+                    _ => continue,
+                };
+                let seg_type = val
+                    .get("properties")
+                    .and_then(|p| p.get("type"))
+                    .and_then(|t| t.get("const").or_else(|| t.get("default")))
+                    .and_then(|v| v.as_str())
+                    .unwrap_or_else(|| key.trim_end_matches("_segment"));
+
+                let description = val
+                    .get("description")
+                    .and_then(|d| d.as_str())
+                    .unwrap_or("Official Oh My Posh segment")
+                    .to_string();
+
+                segments.push(SegmentAsset {
+                    name: title.replace(" Segment", "").replace(" CLI", ""),
+                    segment_type: seg_type.to_string(),
+                    description,
+                    category: "System".to_string(),
+                });
+            }
+        }
+    }
+
+    segments.sort_by(|a, b| a.name.cmp(&b.name));
+    segments.dedup_by(|a, b| a.segment_type == b.segment_type);
+    segments
+}
+
+/// Asynchronously fetches the official JSON schema from GitHub to keep segments updated
+#[allow(dead_code)]
+pub async fn fetch_official_segments() -> Result<Vec<SegmentAsset>, String> {
+    fetch_official_segments_from_url(OFFICIAL_SCHEMA_URL).await
+}
+
+/// Asynchronously fetches segment assets from a specified schema URL
+pub async fn fetch_official_segments_from_url(url: &str) -> Result<Vec<SegmentAsset>, String> {
+    let client = get_client();
+    let resp = client
+        .get(url)
+        .send()
+        .await
+        .map_err(|e| format!("Failed to fetch official schema: {}", e))?;
+
+    if !resp.status().is_success() {
+        return Err(format!("Schema fetch HTTP error {}", resp.status()));
+    }
+
+    let text = resp
+        .text()
+        .await
+        .map_err(|e| format!("Failed to read schema response: {}", e))?;
+
+    let segments = parse_segments_from_schema(&text);
+    if segments.is_empty() {
+        Err("No segments parsed from schema".to_string())
+    } else {
+        Ok(segments)
+    }
 }
 
 #[cfg(test)]
@@ -251,7 +432,7 @@ mod tests {
 
         let (tx, mut rx) = mpsc::channel(10);
 
-        setup_app_task_with_urls(tx, PathBuf::from("dummy"), &themes_url, &fonts_url).await;
+        setup_app_task_with_urls(tx, PathBuf::from("dummy"), &themes_url, &fonts_url, None).await;
 
         let msg1 = rx.recv().await.unwrap();
         if let AppMessage::RemoteThemesLoaded(themes) = msg1 {
@@ -308,7 +489,7 @@ mod tests {
 
         let (tx, mut rx) = mpsc::channel(10);
 
-        setup_app_task_with_urls(tx, PathBuf::from("dummy"), &themes_url, &fonts_url).await;
+        setup_app_task_with_urls(tx, PathBuf::from("dummy"), &themes_url, &fonts_url, None).await;
 
         let msg1 = rx.recv().await.unwrap();
         if let AppMessage::RemoteThemesLoaded(themes) = msg1 {
@@ -353,7 +534,7 @@ mod tests {
 
         let (tx, mut rx) = mpsc::channel(10);
 
-        setup_app_task_with_urls(tx, PathBuf::from("dummy"), &themes_url, &fonts_url).await;
+        setup_app_task_with_urls(tx, PathBuf::from("dummy"), &themes_url, &fonts_url, None).await;
 
         // Wait for ThemesLoaded (empty)
         let _ = rx.recv().await.unwrap();
@@ -389,7 +570,7 @@ mod tests {
 
         let (tx, mut rx) = mpsc::channel(10);
 
-        setup_app_task_with_urls(tx, PathBuf::from("dummy"), &themes_url, &fonts_url).await;
+        setup_app_task_with_urls(tx, PathBuf::from("dummy"), &themes_url, &fonts_url, None).await;
 
         // Channel should be dropped without sending any messages
         assert!(rx.recv().await.is_none());
@@ -420,7 +601,7 @@ mod tests {
 
         let (tx, mut rx) = mpsc::channel(10);
 
-        setup_app_task_with_urls(tx, PathBuf::from("dummy"), &themes_url, &fonts_url).await;
+        setup_app_task_with_urls(tx, PathBuf::from("dummy"), &themes_url, &fonts_url, None).await;
 
         // Channel should be dropped without sending any messages
         assert!(rx.recv().await.is_none());
@@ -464,5 +645,32 @@ mod security_tests {
         let result = download_to_temp("malicious/path", "https://example.com").await;
         assert!(result.is_err());
         assert!(result.unwrap_err().contains("path traversal"));
+    }
+
+    #[test]
+    fn test_parse_segments_from_schema() {
+        let schema_json = r#"{
+            "definitions": {
+                "segment": {
+                    "allOf": [
+                        {
+                            "if": { "properties": { "type": { "const": "git" } } },
+                            "then": { "title": "Git Segment", "description": "Git status" }
+                        },
+                        {
+                            "if": { "properties": { "type": { "const": "node" } } },
+                            "then": { "title": "Node CLI Segment", "description": "Node version" }
+                        }
+                    ]
+                }
+            }
+        }"#;
+
+        let segments = parse_segments_from_schema(schema_json);
+        assert_eq!(segments.len(), 2);
+        assert_eq!(segments[0].segment_type, "git");
+        assert_eq!(segments[0].category, "Version Control");
+        assert_eq!(segments[1].segment_type, "node");
+        assert_eq!(segments[1].category, "Development");
     }
 }

@@ -60,6 +60,7 @@ fn render_main(f: &mut Frame, area: Rect, app: &mut App) {
         .direction(Direction::Vertical)
         .constraints([
             Constraint::Length(1), // title bar
+            Constraint::Length(3), // active prompt preview bar
             Constraint::Length(3), // tab bar
             Constraint::Min(0),    // content
             Constraint::Length(1), // footer
@@ -67,15 +68,16 @@ fn render_main(f: &mut Frame, area: Rect, app: &mut App) {
         .split(area);
 
     components::render_title_bar(f, root[0], app);
-    components::render_tab_bar(f, root[1], app);
+    components::render_active_prompt_bar(f, root[1], app);
+    components::render_tab_bar(f, root[2], app);
 
     match app.active_view {
-        ActiveView::Themes => themes::render_themes(f, root[2], app),
-        ActiveView::Fonts => fonts::render_fonts(f, root[2], app),
-        ActiveView::Segments => segments::render_segments(f, root[2], app),
+        ActiveView::Themes => themes::render_themes(f, root[3], app),
+        ActiveView::Fonts => fonts::render_fonts(f, root[3], app),
+        ActiveView::Segments => segments::render_segments(f, root[3], app),
     }
 
-    components::render_main_footer(f, root[3], app);
+    components::render_main_footer(f, root[4], app);
 
     // Floating modals — rendered on top of everything
     match &app.state {

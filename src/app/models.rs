@@ -82,6 +82,7 @@ pub enum AppMessage {
     FontInstalled(String),
     RemoteThemesLoaded(Vec<RemoteTheme>),
     SegmentToggled(String),
+    SegmentsLoaded(Vec<SegmentAsset>),
 }
 
 /// Represents the different states the application can be in
@@ -154,6 +155,7 @@ pub struct App {
     pub active_segments: HashSet<String>, // Cache of active segments to avoid repetitive I/O
     pub theme_preview_cache: std::collections::HashMap<String, String>, // Cache for theme previews
     pub kitty_preview_position: Option<(u16, u16)>, // Screen coordinates for Kitty preview
+    pub active_theme_preview: String,   // Preview of current active prompt/theme
     pub selected_font_name: Option<String>, // Currently selected font name
     pub font_preview_cache: std::collections::HashMap<String, String>, // Cache for font previews
     pub active_font_preview_task: Option<tokio::task::JoinHandle<()>>, // Handle to abort font preview tasks

@@ -43,6 +43,10 @@ impl App {
                 AppMessage::RemoteThemesLoaded(themes) => {
                     self.remote_themes = themes;
                 }
+                AppMessage::SegmentsLoaded(segments) => {
+                    self.segments = segments;
+                    self.refresh_active_segments();
+                }
                 AppMessage::ThemeDownloaded(path) => {
                     if let Some(name) = path.file_name().and_then(|n| n.to_str()) {
                         let clean_name = name.replace(".omp.json", "");
@@ -329,8 +333,8 @@ impl App {
                             }
                             6 => {
                                 // Diagnostics
-                                self.state =
-                                    AppState::Success("Diagnostics coming soon!".to_string());
+                                let report = self.run_diagnostics();
+                                self.state = AppState::Success(report);
                             }
                             7 => {
                                 // Manual Backup
@@ -801,6 +805,7 @@ mod handle_messages_tests {
             active_segments: HashSet::new(),
             theme_preview_cache: std::collections::HashMap::new(),
             kitty_preview_position: None,
+            active_theme_preview: String::new(),
             selected_font_name: None,
             font_preview_cache: std::collections::HashMap::new(),
             active_font_preview_task: None,

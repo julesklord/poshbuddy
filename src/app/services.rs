@@ -54,7 +54,9 @@ impl App {
 
             if let Ok(content) = fs::read_to_string(profile) {
                 for line in content.lines() {
-                    if (line.contains("oh-my-posh init") || line.contains("ohmyposh init")) && line.contains("--config") {
+                    if (line.contains("oh-my-posh init") || line.contains("ohmyposh init"))
+                        && line.contains("--config")
+                    {
                         // Intentar extraer la ruta entre comillas o después de --config
                         let parts: Vec<&str> = line.split("--config").collect();
                         if parts.len() > 1 {
@@ -113,17 +115,13 @@ impl App {
             if let Some(local_appdata) = std::env::var_os("LOCALAPPDATA") {
                 let local_path = PathBuf::from(local_appdata);
                 fallbacks.push(
-                    local_path.clone()
+                    local_path
+                        .clone()
                         .join("Programs")
                         .join("oh-my-posh")
                         .join("bin"),
                 );
-                fallbacks.push(
-                    local_path
-                        .join("Programs")
-                        .join("ohmyposh")
-                        .join("bin"),
-                );
+                fallbacks.push(local_path.join("Programs").join("ohmyposh").join("bin"));
             }
             if let Some(user_profile) = std::env::var_os("USERPROFILE") {
                 let user_path = PathBuf::from(user_profile);
@@ -164,7 +162,8 @@ impl App {
                 if bin_path.is_file() {
                     // Found it! Prepend to the PATH variable for this process and future child processes
                     if let Some(paths) = std::env::var_os("PATH") {
-                        let mut current_paths: Vec<PathBuf> = std::env::split_paths(&paths).collect();
+                        let mut current_paths: Vec<PathBuf> =
+                            std::env::split_paths(&paths).collect();
                         if !current_paths.contains(&dir) {
                             current_paths.insert(0, dir);
                             if let Ok(new_path) = std::env::join_paths(current_paths) {
@@ -299,6 +298,25 @@ impl App {
             terminal_name: Self::get_terminal_name(),
             has_nerd_font,
         }
+    }
+
+    /// Runs full system diagnostics and returns a formatted report.
+    pub fn run_diagnostics(&self) -> String {
+        let diag = crate::diagnostic::Diagnostic::new();
+        let specs = self
+            .system_specs
+            .clone()
+            .unwrap_or_else(|| Self::gather_system_specs(self.has_nerd_font));
+
+        let res = diag.run_full_diagnostics(
+            &self.detected_profiles,
+            self.active_config_path.as_ref(),
+            self.has_nerd_font,
+            &specs.shell_name,
+            &specs.terminal_name,
+        );
+
+        diag.format_report(&res)
     }
 
     /// Dynamically identifies all active shell configuration profiles on the system.
@@ -617,11 +635,262 @@ impl App {
         self.active_segments.contains(&segment.segment_type)
     }
 
-    /// Surgical JSON edit to toggle a segment in the active Oh My Posh theme.
-    /// It searches for the segment across all blocks and top-level segments.
-    /// If found, it removes all instances (deactivation).
-    /// If not found, it adds it to the first available block (activation).
-    pub fn toggle_segment(&mut self, segment: &SegmentAsset) -> io::Result<()> {
+    /// Returns default JSON structure and properties for a given segment type
+    pub fn get_default_segment_json(segment_type: &str) -> serde_json::Value {
+        let (template, fg, bg, props) = match segment_type {
+            // --- Version Control ---
+            "git" => (
+                " {{ .HEAD }}{{ if .Working.Changed }} \u{f044} {{ .Working.String }}{{ end }}{{ if .Staging.Changed }} \u{f046} {{ .Staging.String }}{{ end }} ",
+                "#ffffff",
+                "#F59E0B",
+                serde_json::json!({"branch_icon": "\u{e0a0} "}),
+            ),
+            "gitversion" => (
+                " {{ if .MajorMinorPatch }}{{ .MajorMinorPatch }}{{ end }} ",
+                "#ffffff",
+                "#F59E0B",
+                serde_json::json!({}),
+            ),
+            "fossil" => (
+                " {{ if .Branch }}{{ .Branch }}{{ end }} ",
+                "#ffffff",
+                "#F59E0B",
+                serde_json::json!({}),
+            ),
+            "mercurial" => (
+                " {{ if .Branch }}{{ .Branch }}{{ end }} ",
+                "#ffffff",
+                "#F59E0B",
+                serde_json::json!({}),
+            ),
+            "subversion" => (
+                " {{ if .Branch }}{{ .Branch }}{{ end }} ",
+                "#ffffff",
+                "#F59E0B",
+                serde_json::json!({}),
+            ),
+            "plastic" => (
+                " {{ if .Branch }}{{ .Branch }}{{ end }} ",
+                "#ffffff",
+                "#F59E0B",
+                serde_json::json!({}),
+            ),
+            "yadm" => (
+                " {{ if .HEAD }}{{ .HEAD }}{{ end }} ",
+                "#ffffff",
+                "#F59E0B",
+                serde_json::json!({}),
+            ),
+
+            // --- System & General ---
+            "path" => (
+                " {{ .Path }} ",
+                "#ffffff",
+                "#3B82F6",
+                serde_json::json!({"style": "full"}),
+            ),
+            "session" => (
+                " {{ if .UserName }}{{ .UserName }}{{ end }}{{ if .HostName }}@{{ .HostName }}{{ end }} ",
+                "#ffffff",
+                "#4B5563",
+                serde_json::json!({}),
+            ),
+            "os" => (
+                " {{ if .Icon }}{{ .Icon }}{{ end }} ",
+                "#ffffff",
+                "#374151",
+                serde_json::json!({}),
+            ),
+            "shell" => (
+                " {{ if .Name }}{{ .Name }}{{ end }} ",
+                "#ffffff",
+                "#4B5563",
+                serde_json::json!({}),
+            ),
+            "battery" => (
+                " {{ if .Error }}{{ .Error }}{{ else if .Icon }}{{ .Icon }} {{ .Percentage }}%{{ end }} ",
+                "#ffffff",
+                "#10B981",
+                serde_json::json!({}),
+            ),
+            "executiontime" => (
+                " {{ if .FormattedMs }}\u{f252} {{ .FormattedMs }}{{ end }} ",
+                "#ffffff",
+                "#F59E0B",
+                serde_json::json!({}),
+            ),
+            "status" => (
+                " {{ if .Error }}\u{f00d} {{ .Code }}{{ else }}\u{f00c}{{ end }} ",
+                "#ffffff",
+                "#EF4444",
+                serde_json::json!({}),
+            ),
+            "exit" => (
+                " {{ if gt .Code 0 }}\u{f00d} {{ .Code }}{{ else }}\u{f00c}{{ end }} ",
+                "#ffffff",
+                "#EF4444",
+                serde_json::json!({}),
+            ),
+            "root" => (" \u{f0e7} ", "#ffffff", "#EF4444", serde_json::json!({})),
+            "sysinfo" => (
+                " \u{f4bc} {{ .PhysicalPercentUsed }}% ",
+                "#ffffff",
+                "#6B7280",
+                serde_json::json!({"precision": 0}),
+            ),
+            "spotify" => (
+                " {{ if .Track }}\u{f1bc} {{ .Artist }} - {{ .Track }}{{ end }} ",
+                "#000000",
+                "#1DB954",
+                serde_json::json!({}),
+            ),
+            "weather" => (
+                " {{ if .Weather }}{{ .Weather }} {{ .Temperature }}{{ end }} ",
+                "#ffffff",
+                "#3B82F6",
+                serde_json::json!({}),
+            ),
+            "wakatime" => (
+                " {{ if .CumulativeTotal }}\u{f017} {{ .CumulativeTotal.Text }}{{ end }} ",
+                "#ffffff",
+                "#000000",
+                serde_json::json!({}),
+            ),
+
+            // --- Development & Languages ---
+            "node" => (
+                " {{ if .Full }}\u{e718} {{ .Full }}{{ end }} ",
+                "#ffffff",
+                "#10B981",
+                serde_json::json!({}),
+            ),
+            "python" => (
+                " {{ if .Full }}\u{e73c} {{ .Full }}{{ end }} ",
+                "#ffffff",
+                "#3B82F6",
+                serde_json::json!({}),
+            ),
+            "rust" => (
+                " {{ if .Full }}\u{e7a8} {{ .Full }}{{ end }} ",
+                "#ffffff",
+                "#F97316",
+                serde_json::json!({}),
+            ),
+            "go" => (
+                " {{ if .Full }}\u{e60e} {{ .Full }}{{ end }} ",
+                "#ffffff",
+                "#06B6D4",
+                serde_json::json!({}),
+            ),
+            "dotnet" => (
+                " {{ if .Full }}\u{e70c} {{ .Full }}{{ end }} ",
+                "#ffffff",
+                "#8B5CF6",
+                serde_json::json!({}),
+            ),
+            "php" => (
+                " {{ if .Full }}\u{e73d} {{ .Full }}{{ end }} ",
+                "#ffffff",
+                "#6366F1",
+                serde_json::json!({}),
+            ),
+            "ruby" => (
+                " {{ if .Full }}\u{e73b} {{ .Full }}{{ end }} ",
+                "#ffffff",
+                "#EF4444",
+                serde_json::json!({}),
+            ),
+            "java" => (
+                " {{ if .Full }}\u{e738} {{ .Full }}{{ end }} ",
+                "#ffffff",
+                "#F97316",
+                serde_json::json!({}),
+            ),
+            "flutter" => (
+                " {{ if .Full }}\u{0255} {{ .Full }}{{ end }} ",
+                "#ffffff",
+                "#0284C7",
+                serde_json::json!({}),
+            ),
+
+            // --- Cloud & Containers ---
+            "docker" => (
+                " {{ if .Context }}\u{f308} {{ .Context }}{{ end }} ",
+                "#ffffff",
+                "#0284C7",
+                serde_json::json!({}),
+            ),
+            "aws" => (
+                " {{ if .Profile }}\u{e7ad} {{ .Profile }}{{ end }} ",
+                "#ffffff",
+                "#F59E0B",
+                serde_json::json!({}),
+            ),
+            "az" => (
+                " {{ if .Name }}\u{f0c2} {{ .Name }}{{ end }} ",
+                "#ffffff",
+                "#0284C7",
+                serde_json::json!({}),
+            ),
+            "gcp" => (
+                " {{ if .Project }}\u{e7b2} {{ .Project }}{{ end }} ",
+                "#ffffff",
+                "#EA4335",
+                serde_json::json!({}),
+            ),
+            "kubectl" => (
+                " {{ if .Context }}\u{2388} {{ .Context }}{{ end }} ",
+                "#ffffff",
+                "#3B82F6",
+                serde_json::json!({}),
+            ),
+            "terraform" => (
+                " {{ if .Workspace }}\u{f10c} {{ .Workspace }}{{ end }} ",
+                "#ffffff",
+                "#8B5CF6",
+                serde_json::json!({}),
+            ),
+
+            // --- Time ---
+            "time" => (
+                " {{ .CurrentDate | date \"15:04:05\" }} ",
+                "#ffffff",
+                "#1F2937",
+                serde_json::json!({}),
+            ),
+
+            // --- Generic Fallback for any other segment ---
+            _ => (
+                " {{ if .String }}{{ .String }}{{ else if .Text }}{{ .Text }}{{ else if .Full }}{{ .Full }}{{ end }} ",
+                "#ffffff",
+                "#61afef",
+                serde_json::json!({}),
+            ),
+        };
+
+        let mut seg_json = serde_json::json!({
+            "type": segment_type,
+            "style": "powerline",
+            "powerline_symbol": "\u{e0b0}",
+            "foreground": fg,
+            "background": bg,
+            "template": template
+        });
+
+        if let serde_json::Value::Object(ref mut map) = seg_json {
+            match props.as_object() {
+                Some(obj) if !obj.is_empty() => {
+                    map.insert("properties".to_string(), props);
+                }
+                _ => {}
+            }
+        }
+
+        seg_json
+    }
+
+    /// Adds a segment to the active configuration if not already present.
+    pub fn add_segment(&mut self, segment_type: &str) -> io::Result<()> {
         let path = self
             .active_config_path
             .as_ref()
@@ -631,49 +900,28 @@ impl App {
         let mut json: serde_json::Value = serde_json::from_str(&content)
             .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e.to_string()))?;
 
-        let mut found_any = false;
-
-        // 1. Remove from top-level segments if present
-        if let Some(segments) = json.get_mut("segments").and_then(|v| v.as_array_mut()) {
-            let initial_len = segments.len();
-            segments
-                .retain(|s| s.get("type").and_then(|v| v.as_str()) != Some(&segment.segment_type));
-            if segments.len() < initial_len {
-                found_any = true;
-            }
-        }
-
-        // 2. Remove from all blocks if present
-        if let Some(blocks) = json.get_mut("blocks").and_then(|v| v.as_array_mut()) {
-            for block in blocks.iter_mut() {
-                if let Some(segments) = block.get_mut("segments").and_then(|v| v.as_array_mut()) {
-                    let initial_len = segments.len();
-                    segments.retain(|s| {
-                        s.get("type").and_then(|v| v.as_str()) != Some(&segment.segment_type)
+        let mut already_exists = false;
+        if let Some(blocks) = json.get("blocks").and_then(|v| v.as_array()) {
+            for block in blocks {
+                let contains = block
+                    .get("segments")
+                    .and_then(|v| v.as_array())
+                    .is_some_and(|segs| {
+                        segs.iter()
+                            .any(|s| s.get("type").and_then(|v| v.as_str()) == Some(segment_type))
                     });
-                    if segments.len() < initial_len {
-                        found_any = true;
-                    }
+                if contains {
+                    already_exists = true;
+                    break;
                 }
             }
         }
 
-        // 3. If not found, add to the first block (or create one if missing)
-        if !found_any {
-            let new_segment = serde_json::json!({
-                "type": segment.segment_type,
-                "style": "powerline",
-                "powerline_symbol": "\u{e0b0}",
-                "foreground": "#ffffff",
-                "background": "#61afef",
-                "template": format!(" {} ", segment.segment_type)
-            });
-
-            // Ensure "blocks" exists and has at least one element
+        if !already_exists {
+            let new_segment = Self::get_default_segment_json(segment_type);
             if json.get("blocks").is_none() {
                 json["blocks"] = serde_json::json!([]);
             }
-
             let blocks = json
                 .get_mut("blocks")
                 .and_then(|v| v.as_array_mut())
@@ -689,16 +937,102 @@ impl App {
             if let Some(segments) = blocks[0].get_mut("segments").and_then(|v| v.as_array_mut()) {
                 segments.push(new_segment);
             } else {
-                // If the block exists but segments field is missing
                 blocks[0]["segments"] = serde_json::json!([new_segment]);
+            }
+
+            let new_json =
+                serde_json::to_string_pretty(&json).map_err(|e| io::Error::other(e.to_string()))?;
+            fs::write(path, new_json)?;
+            self.refresh_active_segments();
+        }
+
+        Ok(())
+    }
+
+    /// Removes all occurrences of a segment type from the active configuration.
+    pub fn remove_segment(&mut self, segment_type: &str) -> io::Result<()> {
+        let path = self
+            .active_config_path
+            .as_ref()
+            .ok_or_else(|| io::Error::new(io::ErrorKind::NotFound, "No active config found"))?;
+
+        let content = fs::read_to_string(path)?;
+        let mut json: serde_json::Value = serde_json::from_str(&content)
+            .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e.to_string()))?;
+
+        if let Some(segments) = json.get_mut("segments").and_then(|v| v.as_array_mut()) {
+            segments.retain(|s| s.get("type").and_then(|v| v.as_str()) != Some(segment_type));
+        }
+
+        if let Some(blocks) = json.get_mut("blocks").and_then(|v| v.as_array_mut()) {
+            for block in blocks.iter_mut() {
+                if let Some(segments) = block.get_mut("segments").and_then(|v| v.as_array_mut()) {
+                    segments
+                        .retain(|s| s.get("type").and_then(|v| v.as_str()) != Some(segment_type));
+                }
             }
         }
 
         let new_json =
             serde_json::to_string_pretty(&json).map_err(|e| io::Error::other(e.to_string()))?;
         fs::write(path, new_json)?;
-        self.refresh_active_segments(); // Update cache after write
+        self.refresh_active_segments();
         Ok(())
+    }
+
+    /// Moves a segment up/left or down/right within the primary prompt block.
+    #[allow(dead_code)]
+    pub fn move_segment(&mut self, segment_type: &str, move_up: bool) -> io::Result<()> {
+        let path = self
+            .active_config_path
+            .as_ref()
+            .ok_or_else(|| io::Error::new(io::ErrorKind::NotFound, "No active config found"))?;
+
+        let content = fs::read_to_string(path)?;
+        let mut json: serde_json::Value = serde_json::from_str(&content)
+            .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e.to_string()))?;
+
+        if let Some(blocks) = json.get_mut("blocks").and_then(|v| v.as_array_mut()) {
+            for block in blocks.iter_mut() {
+                let target_pos =
+                    block
+                        .get("segments")
+                        .and_then(|v| v.as_array())
+                        .and_then(|segs| {
+                            segs.iter().position(|s| {
+                                s.get("type").and_then(|v| v.as_str()) == Some(segment_type)
+                            })
+                        });
+
+                if let (Some(segments), Some(idx)) = (
+                    block.get_mut("segments").and_then(|v| v.as_array_mut()),
+                    target_pos,
+                ) {
+                    if move_up && idx > 0 {
+                        segments.swap(idx, idx - 1);
+                        break;
+                    } else if !move_up && idx + 1 < segments.len() {
+                        segments.swap(idx, idx + 1);
+                        break;
+                    }
+                }
+            }
+        }
+
+        let new_json =
+            serde_json::to_string_pretty(&json).map_err(|e| io::Error::other(e.to_string()))?;
+        fs::write(path, new_json)?;
+        self.refresh_active_segments();
+        Ok(())
+    }
+
+    /// Surgical JSON edit to toggle a segment in the active Oh My Posh theme.
+    pub fn toggle_segment(&mut self, segment: &SegmentAsset) -> io::Result<()> {
+        if self.is_segment_active(segment) {
+            self.remove_segment(&segment.segment_type)
+        } else {
+            self.add_segment(&segment.segment_type)
+        }
     }
 
     /// Actualiza quirúrgicamente una sección del perfil de PowerShell envuelta en marcadores de PoshBuddy
@@ -1668,7 +2002,7 @@ mod tests {
     use std::fs;
     use std::io::Write;
     use std::path::PathBuf;
-    use tempfile::{tempdir, NamedTempFile};
+    use tempfile::{NamedTempFile, tempdir};
 
     fn create_dummy_app(profiles: Vec<PathBuf>) -> App {
         let mut app = App::new();
@@ -1764,6 +2098,73 @@ mod tests {
     fn test_find_active_config_path_no_profiles() {
         let app = create_dummy_app(vec![]);
         assert_eq!(app.find_active_config_path(), None);
+    }
+
+    #[test]
+    fn test_add_and_remove_segment() {
+        let mut file = NamedTempFile::new().unwrap();
+        write!(
+            file,
+            r#"{{
+            "blocks": [
+                {{
+                    "type": "prompt",
+                    "alignment": "left",
+                    "segments": [
+                        {{ "type": "path" }}
+                    ]
+                }}
+            ]
+        }}"#
+        )
+        .unwrap();
+
+        let mut app = App::new();
+        app.active_config_path = Some(file.path().to_path_buf());
+        app.refresh_active_segments();
+
+        assert!(app.active_segments.contains("path"));
+        assert!(!app.active_segments.contains("node"));
+
+        // Add segment
+        app.add_segment("node").unwrap();
+        assert!(app.active_segments.contains("node"));
+
+        // Remove segment
+        app.remove_segment("node").unwrap();
+        assert!(!app.active_segments.contains("node"));
+    }
+
+    #[test]
+    fn test_move_segment() {
+        let mut file = NamedTempFile::new().unwrap();
+        write!(
+            file,
+            r#"{{
+            "blocks": [
+                {{
+                    "type": "prompt",
+                    "alignment": "left",
+                    "segments": [
+                        {{ "type": "path" }},
+                        {{ "type": "git" }}
+                    ]
+                }}
+            ]
+        }}"#
+        )
+        .unwrap();
+
+        let mut app = App::new();
+        app.active_config_path = Some(file.path().to_path_buf());
+
+        // Move "git" up (left)
+        app.move_segment("git", true).unwrap();
+
+        let content = std::fs::read_to_string(file.path()).unwrap();
+        let json: serde_json::Value = serde_json::from_str(&content).unwrap();
+        let first_seg = json["blocks"][0]["segments"][0]["type"].as_str().unwrap();
+        assert_eq!(first_seg, "git");
     }
 
     #[test]

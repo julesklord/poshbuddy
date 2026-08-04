@@ -15,6 +15,11 @@ pub enum Commands {
         #[command(subcommand)]
         target: SetTarget,
     },
+    /// Toggle resources (e.g. segments)
+    Toggle {
+        #[command(subcommand)]
+        target: ToggleTarget,
+    },
     /// Install resources
     Install {
         #[command(subcommand)]
@@ -25,12 +30,23 @@ pub enum Commands {
         #[command(subcommand)]
         target: ListTarget,
     },
+    /// Run system diagnostics and environment health checks
+    #[command(alias = "diagnostics")]
+    Doctor,
 }
 
 #[derive(Subcommand)]
 pub enum SetTarget {
     /// Set the active theme
     Theme { name: String },
+    /// Enable or disable a segment
+    Segment { name: String },
+}
+
+#[derive(Subcommand)]
+pub enum ToggleTarget {
+    /// Toggle an Oh My Posh segment (enable/disable)
+    Segment { name: String },
 }
 
 #[derive(Subcommand)]
@@ -50,4 +66,6 @@ pub enum ListTarget {
     },
     /// List available fonts
     Fonts,
+    /// List available segments
+    Segments,
 }
